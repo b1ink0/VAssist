@@ -26,6 +26,7 @@ import { useXrRuntime } from "../../contexts/XrRuntimeContext";
 import RangeSlider from "../ui/RangeSlider";
 import SettingsDisclosure from "./shared/SettingsDisclosure";
 import SettingsRow from "../ui/SettingsRow";
+import SettingsGroup from "./shared/SettingsGroup";
 
 type StageItem = Awaited<
   ReturnType<typeof stageStorageService.getStagesList>
@@ -285,15 +286,17 @@ export function StageSelectionControls({
         disabled={!avatarEnabled}
         className="flex min-w-0 flex-col gap-4 disabled:opacity-45"
       >
-        <SettingsRow label="Show stage">
-          <Toggle
-            aria-label="Enable stages"
-            checked={selected.kind !== "none"}
-            onChange={(enabled) =>
-              void select(enabled ? lastSelection.current : { kind: "none" })
-            }
-          />
-        </SettingsRow>
+        <SettingsGroup>
+          <SettingsRow label="Show stage">
+            <Toggle
+              aria-label="Enable stages"
+              checked={selected.kind !== "none"}
+              onChange={(enabled) =>
+                void select(enabled ? lastSelection.current : { kind: "none" })
+              }
+            />
+          </SettingsRow>
+        </SettingsGroup>
         {selected.kind !== "none" && (
           <div className="flex flex-wrap gap-2">
             {BUILT_IN_STAGES.map((stage) => (
@@ -338,55 +341,57 @@ export function StageSelectionControls({
               onOpenChange={setAdvanced}
             >
               <div className="flex min-w-0 flex-col gap-3">
-                <SettingsRow
-                  label={
-                    <>
-                      <span className="flex items-center justify-between gap-3">
-                        <span>Environment brightness</span>
-                        <span className="tabular-nums vassist-text-primary">
-                          {Math.round(options.brightness * 100)}%
+                <SettingsGroup>
+                  <SettingsRow
+                    label={
+                      <>
+                        <span className="flex items-center justify-between gap-3">
+                          <span>Environment brightness</span>
+                          <span className="tabular-nums vassist-text-primary">
+                            {Math.round(options.brightness * 100)}%
+                          </span>
                         </span>
-                      </span>
-                    </>
-                  }
-                  layout="stacked"
-                >
-                  <RangeSlider
-                    min="0.35"
-                    max="1.5"
-                    step="0.05"
-                    value={options.brightness}
-                    aria-label="Environment brightness"
-                    onValueChange={(nextValue) =>
-                      setOptions({
-                        ...options,
-                        brightness: nextValue,
-                      })
+                      </>
                     }
-                  />
-                  <span className="flex justify-between text-[10px] vassist-text-muted">
-                    <span>Dim</span>
-                    <span>Bright</span>
-                  </span>
-                </SettingsRow>
-                {onParallaxChange && (
-                  <SettingsRow label={<>Stage parallax</>}>
-                    <Toggle
-                      checked={parallaxEnabled !== false}
-                      onChange={onParallaxChange}
+                    layout="stacked"
+                  >
+                    <RangeSlider
+                      min="0.35"
+                      max="1.5"
+                      step="0.05"
+                      value={options.brightness}
+                      aria-label="Environment brightness"
+                      onValueChange={(nextValue) =>
+                        setOptions({
+                          ...options,
+                          brightness: nextValue,
+                        })
+                      }
                     />
+                    <span className="flex justify-between text-[10px] vassist-text-muted">
+                      <span>Dim</span>
+                      <span>Bright</span>
+                    </span>
                   </SettingsRow>
-                )}
-                {onShadowChange && (
-                  <SettingsRow label={<>Avatar shadow</>}>
-                    <Toggle
-                      checked={shadowEnabled !== false}
-                      onChange={onShadowChange}
-                    />
-                  </SettingsRow>
-                )}
+                  {onParallaxChange && (
+                    <SettingsRow label={<>Stage parallax</>}>
+                      <Toggle
+                        checked={parallaxEnabled !== false}
+                        onChange={onParallaxChange}
+                      />
+                    </SettingsRow>
+                  )}
+                  {onShadowChange && (
+                    <SettingsRow label={<>Avatar shadow</>}>
+                      <Toggle
+                        checked={shadowEnabled !== false}
+                        onChange={onShadowChange}
+                      />
+                    </SettingsRow>
+                  )}
+                </SettingsGroup>
                 {supportsSeason && (
-                  <div className="flex flex-col gap-3">
+                  <SettingsGroup>
                     <SettingsRow label={<>Season</>} layout="stacked">
                       <Select
                         value={options.season}
@@ -415,10 +420,10 @@ export function StageSelectionControls({
                         />
                       </SettingsRow>
                     )}
-                  </div>
+                  </SettingsGroup>
                 )}
                 {definition?.time && (
-                  <div className="flex flex-col gap-3">
+                  <SettingsGroup>
                     {definition.moods && (
                       <SettingsRow label={<>Lighting</>} layout="stacked">
                         <Select
@@ -502,7 +507,7 @@ export function StageSelectionControls({
                         )}
                       </>
                     )}
-                  </div>
+                  </SettingsGroup>
                 )}
                 {definition?.animated && (
                   <SettingsRow label={<>Animate environment</>}>
@@ -515,7 +520,7 @@ export function StageSelectionControls({
                   </SettingsRow>
                 )}
                 {supportsAlignment && (
-                  <>
+                  <SettingsGroup>
                     <SettingsRow
                       label={<>Avatar height in meters</>}
                       layout="stacked"
@@ -558,7 +563,7 @@ export function StageSelectionControls({
                         }
                       />
                     </SettingsRow>
-                  </>
+                  </SettingsGroup>
                 )}
                 <Button size="sm" onClick={apply}>
                   Apply

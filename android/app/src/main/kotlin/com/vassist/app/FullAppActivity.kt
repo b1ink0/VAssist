@@ -63,6 +63,24 @@ class FullAppActivity : ComponentActivity() {
     
     private var arSessionManager: com.vassist.app.ar.ARCoreSessionManager? = null
     private var arBridge: com.vassist.app.ar.NativeARBridge? = null
+    private var arCapture: com.vassist.app.ar.ARCaptureController? = null
+    private val captureFinishedReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
+            if (intent?.action == com.vassist.app.ar.ARCaptureService.ACTION_STARTED) {
+                arCapture?.onVideoStarted(
+                    intent.getStringExtra(com.vassist.app.ar.ARCaptureService.EXTRA_MESSAGE_ID),
+                    intent.getBooleanExtra("success", false),
+                    intent.getStringExtra("error")
+                )
+                return
+            }
+            val uri = intent?.getStringExtra("uri")?.let(Uri::parse)
+            val error = intent?.getStringExtra("error")
+            arCapture?.onVideoStopped(
+                intent?.getStringExtra(com.vassist.app.ar.ARCaptureService.EXTRA_MESSAGE_ID), uri, error
+            )
+        }
+    }
 
     private var fileChooserCallback: ValueCallback<Array<Uri>>? = null
     private var pendingPermissionRequest: PermissionRequest? = null
@@ -84,6 +102,18 @@ class FullAppActivity : ComponentActivity() {
             pendingPermissionRequest = null
         }
     }
+
+    private val arStoragePermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted -> arCapture?.onStoragePermissionResult(granted) }
+
+    private val arAudioPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted -> arCapture?.onAudioPermissionResult(granted) }
+
+    private val arProjectionConsentLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result -> arCapture?.onProjectionConsent(result.resultCode, result.data) }
     
     private val photoPickerLauncher = registerForActivityResult(
         ActivityResultContracts.PickVisualMedia()
@@ -169,7 +199,22 @@ class FullAppActivity : ComponentActivity() {
             glSurfaceView,
             rootLayout
         )
-        arBridge = com.vassist.app.ar.NativeARBridge(webView, arSessionManager)
+        arCapture = com.vassist.app.ar.ARCaptureController(this, glSurfaceView)
+        arCapture?.requestStoragePermission = {
+            arStoragePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        }
+        arCapture?.requestAudioPermission = {
+            arAudioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        }
+        arCapture?.requestProjectionConsent = { intent -> arProjectionConsentLauncher.launch(intent) }
+        arBridge = com.vassist.app.ar.NativeARBridge(webView, arSessionManager, arCapture)
+        arCapture?.listener = { message -> arBridge?.postCaptureResult(message) }
+        val filter = android.content.IntentFilter().apply {
+            addAction(com.vassist.app.ar.ARCaptureService.ACTION_FINISHED)
+            addAction(com.vassist.app.ar.ARCaptureService.ACTION_STARTED)
+        }
+        if (android.os.Build.VERSION.SDK_INT >= 33) registerReceiver(captureFinishedReceiver, filter, RECEIVER_NOT_EXPORTED)
+        else @Suppress("DEPRECATION") registerReceiver(captureFinishedReceiver, filter)
         arSessionManager?.bridge = arBridge
         
         // Custom PathHandler that serves assets from the public/ subfolder
@@ -606,7 +651,6 @@ class FullAppActivity : ComponentActivity() {
     
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        
         if (requestCode == REQUEST_CHOOSE_IMAGE) {
             if (resultCode == RESULT_OK) {
                 val uri = data?.data ?: cameraPhotoUri
@@ -638,6 +682,8 @@ class FullAppActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        arCapture?.stopForHostDestroy()
+        runCatching { unregisterReceiver(captureFinishedReceiver) }
         backgroundMotionBridge.dispose()
         // Cancel any pending file chooser callback
         fileChooserCallback?.onReceiveValue(null)

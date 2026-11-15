@@ -8,6 +8,7 @@ import type {
 } from "./ARTypes";
 
 export interface ARProvider {
+  dispose?(): void;
   isSupported(): Promise<boolean>;
   start(): Promise<void>;
   stop(): Promise<void>;

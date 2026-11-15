@@ -1,4 +1,4 @@
-import type { HTMLAttributes, Ref } from "react";
+import type { CSSProperties, HTMLAttributes, Ref } from "react";
 import { ScrollArea } from "@base-ui/react/scroll-area";
 import { cn } from "../../../utils/cn";
 
@@ -6,11 +6,13 @@ export default function SettingsScrollArea({
   children,
   className,
   contentClassName = "flex flex-col gap-2",
+  contentStyle,
   ref,
   onScroll,
   ...props
 }: HTMLAttributes<HTMLDivElement> & {
   contentClassName?: string;
+  contentStyle?: CSSProperties;
   ref?: Ref<HTMLDivElement>;
 }) {
   return (
@@ -35,6 +37,7 @@ export default function SettingsScrollArea({
             width: "100%",
             display: "flex",
             flexDirection: "column",
+            ...contentStyle,
           }}
         >
           {children}

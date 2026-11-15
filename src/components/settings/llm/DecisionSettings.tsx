@@ -17,6 +17,7 @@ import {
 } from "../../../services/ai/DecisionClient";
 import { useConfigAIActions } from "../../../hooks/config/useConfigAI";
 import { Button, Input, Select, SettingsRow } from "../../ui";
+import SettingsGroup from "../shared/SettingsGroup";
 import Toggle from "../../common/Toggle";
 import { Icon } from "../../icons";
 import { isDesktop } from "../../../utils/PlatformUtils";
@@ -258,201 +259,197 @@ const DecisionSettings = ({
           )}
 
           {!hostManagedDecision && (
-            <div className="flex flex-col gap-2">
-              <label className="block text-sm font-medium vassist-text-primary">
-                Saved Backends
-              </label>
-              <Input
-                type="text"
-                value={profileName}
-                onChange={(event) => setProfileName(event.target.value)}
-                placeholder="Backend name"
-                size="xs"
-                variant={isLightBackground ? "dark" : "default"}
-              />
-              <div className="flex flex-wrap items-center gap-2 [&>button:first-child]:min-w-0 [&>button:first-child]:flex-1">
-                <Select
-                  value={selectedProfileId}
-                  onChange={(event) => {
-                    const nextId = event.target.value;
-                    setSelectedProfileId(nextId);
-                    const profile = providerProfiles.find(
-                      (entry) => entry.id === nextId,
-                    );
-                    if (profile) applyProfile(profile);
-                  }}
-                  options={[
-                    {
-                      value: "",
-                      label:
-                        providerProfiles.length === 0
-                          ? "No saved backends yet"
-                          : "Select a saved backend",
-                    },
-                    ...providerProfiles.map((profile) => ({
-                      value: profile.id,
-                      label: profile.name,
-                    })),
-                  ]}
-                  variant={isLightBackground ? "dark" : "default"}
-                  className="min-h-[32px]"
-                />
-                <Button
-                  type="button"
-                  size="icon"
-                  variant={isLightBackground ? "dark" : "ghost"}
-                  onClick={() => {
-                    setSelectedProfileId("");
-                    setProfileName("");
-                  }}
-                  title="Create a new saved backend"
-                  aria-label="Create a new saved backend"
-                >
-                  <Icon name="add" size={14} />
-                </Button>
-                <Button
-                  type="button"
-                  size="icon"
-                  variant={isLightBackground ? "dark" : "default"}
-                  onClick={saveProfile}
-                  title="Save current backend"
-                  aria-label="Save current backend"
-                >
-                  <Icon name="save" size={14} />
-                </Button>
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="error"
-                  onClick={deleteProfile}
-                  disabled={!selectedProfile}
-                  title="Delete selected backend"
-                  aria-label="Delete selected backend"
-                >
-                  <Icon name="delete" size={14} />
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {!hostManagedDecision && (
-            <SettingsRow
-              label="API URL"
-              targetId="llm.decision.endpoint"
-              description="Base URL, /v1, or a full /v1/systemone URL."
-              layout="stacked"
-            >
-              <Input
-                value={decision.endpoint}
-                onChange={(event) =>
-                  updateDecision("endpoint", event.target.value)
-                }
-                placeholder={
-                  decision.provider === "desktop-local"
-                    ? joinEndpointPath(
-                        DEFAULT_ENDPOINTS.desktopLocal,
-                        SERVICE_ROUTES.openai.systemOne,
-                      )
-                    : "https://example.com/v1/systemone"
-                }
-                type="url"
-                autoComplete="off"
-                disableDebounce
-                variant={isLightBackground ? "dark" : "default"}
-              />
-            </SettingsRow>
-          )}
-
-          {!hostManagedDecision && (
-            <SettingsRow
-              label="Model"
-              targetId="llm.decision.model"
-              description="Choose a local decision model or enter a remote model id."
-              layout="stacked"
-            >
-              <Input
-                value={decision.model}
-                onChange={(event) =>
-                  updateDecision("model", event.target.value)
-                }
-                placeholder="Optional model ID"
-                autoComplete="off"
-                disableDebounce
-                variant={isLightBackground ? "dark" : "default"}
-              />
-            </SettingsRow>
-          )}
-
-          {!hostManagedDecision && (
-            <SettingsRow
-              label="API key"
-              targetId="llm.decision.apiKey"
-              description="Optional Bearer token for a protected endpoint."
-              layout="stacked"
-            >
-              <Input
-                value={decision.apiKey}
-                onChange={(event) =>
-                  updateDecision("apiKey", event.target.value)
-                }
-                placeholder="Optional"
-                type="password"
-                autoComplete="off"
-                disableDebounce
-                variant={isLightBackground ? "dark" : "default"}
-              />
-            </SettingsRow>
-          )}
-
-          {!hostManagedDecision && (
-            <SettingsRow
-              label="Request timeout"
-              targetId="llm.decision.timeoutMs"
-              description="How long a decision request may wait before failing."
-            >
-              <div className="flex items-center gap-2">
+            <SettingsGroup className="gap-0">
+              <SettingsRow label="Saved Backends" layout="stacked">
                 <Input
-                  value={decision.timeoutMs}
+                  type="text"
+                  value={profileName}
+                  onChange={(event) => setProfileName(event.target.value)}
+                  placeholder="Backend name"
+                  size="xs"
+                  variant={isLightBackground ? "dark" : "default"}
+                />
+                <div className="flex flex-col gap-2">
+                  <Select
+                    value={selectedProfileId}
+                    onChange={(event) => {
+                      const nextId = event.target.value;
+                      setSelectedProfileId(nextId);
+                      const profile = providerProfiles.find(
+                        (entry) => entry.id === nextId,
+                      );
+                      if (profile) applyProfile(profile);
+                    }}
+                    options={[
+                      {
+                        value: "",
+                        label:
+                          providerProfiles.length === 0
+                            ? "No saved backends yet"
+                            : "Select a saved backend",
+                      },
+                      ...providerProfiles.map((profile) => ({
+                        value: profile.id,
+                        label: profile.name,
+                      })),
+                    ]}
+                    variant={isLightBackground ? "dark" : "default"}
+                    className="min-h-[32px] w-full"
+                  />
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      className="flex-1"
+                      size="icon"
+                      variant={isLightBackground ? "dark" : "ghost"}
+                      onClick={() => {
+                        setSelectedProfileId("");
+                        setProfileName("");
+                      }}
+                      title="Create a new saved backend"
+                      aria-label="Create a new saved backend"
+                    >
+                      <Icon name="add" size={14} />
+                    </Button>
+                    <Button
+                      type="button"
+                      className="flex-1"
+                      size="icon"
+                      variant={isLightBackground ? "dark" : "default"}
+                      onClick={saveProfile}
+                      title="Save current backend"
+                      aria-label="Save current backend"
+                    >
+                      <Icon name="save" size={14} />
+                    </Button>
+                    <Button
+                      type="button"
+                      className="flex-1"
+                      size="icon"
+                      variant="error"
+                      onClick={deleteProfile}
+                      disabled={!selectedProfile}
+                      title="Delete selected backend"
+                      aria-label="Delete selected backend"
+                    >
+                      <Icon name="delete" size={14} />
+                    </Button>
+                  </div>
+                </div>
+              </SettingsRow>
+
+              <SettingsRow
+                label="API URL"
+                targetId="llm.decision.endpoint"
+                description="Base URL, /v1, or a full /v1/systemone URL."
+                layout="stacked"
+              >
+                <Input
+                  value={decision.endpoint}
                   onChange={(event) =>
-                    updateDecision(
-                      "timeoutMs",
-                      Number(event.target.value) || 1500,
-                    )
+                    updateDecision("endpoint", event.target.value)
                   }
-                  type="number"
-                  min={250}
-                  max={60000}
-                  step={250}
-                  className="w-28"
+                  placeholder={
+                    decision.provider === "desktop-local"
+                      ? joinEndpointPath(
+                          DEFAULT_ENDPOINTS.desktopLocal,
+                          SERVICE_ROUTES.openai.systemOne,
+                        )
+                      : "https://example.com/v1/systemone"
+                  }
+                  type="url"
+                  autoComplete="off"
                   disableDebounce
                   variant={isLightBackground ? "dark" : "default"}
                 />
-                <span className="text-xs vassist-text-muted">ms</span>
-              </div>
-            </SettingsRow>
-          )}
+              </SettingsRow>
 
-          {!hostManagedDecision && decision.provider === "desktop-local" && (
-            <SettingsRow
-              label="Context Size"
-              targetId="llm.decision.contextSize"
-              description="Maximum tokens per local decision request. Larger contexts use more memory."
-              layout="stacked"
-            >
-              <Input
-                type="number"
-                min="512"
-                step="512"
-                value={decision.contextSize}
-                onChange={(event) =>
-                  updateDecision(
-                    "contextSize",
-                    parseInt(event.target.value, 10) || 4096,
-                  )
-                }
-                variant={isLightBackground ? "dark" : "default"}
-              />
-            </SettingsRow>
+              <SettingsRow
+                label="Model"
+                targetId="llm.decision.model"
+                description="Choose a local decision model or enter a remote model id."
+                layout="stacked"
+              >
+                <Input
+                  value={decision.model}
+                  onChange={(event) =>
+                    updateDecision("model", event.target.value)
+                  }
+                  placeholder="Optional model ID"
+                  autoComplete="off"
+                  disableDebounce
+                  variant={isLightBackground ? "dark" : "default"}
+                />
+              </SettingsRow>
+
+              <SettingsRow
+                label="API key"
+                targetId="llm.decision.apiKey"
+                description="Optional Bearer token for a protected endpoint."
+                layout="stacked"
+              >
+                <Input
+                  value={decision.apiKey}
+                  onChange={(event) =>
+                    updateDecision("apiKey", event.target.value)
+                  }
+                  placeholder="Optional"
+                  type="password"
+                  autoComplete="off"
+                  disableDebounce
+                  variant={isLightBackground ? "dark" : "default"}
+                />
+              </SettingsRow>
+
+              <SettingsRow
+                label="Request timeout"
+                targetId="llm.decision.timeoutMs"
+                description="How long a decision request may wait before failing."
+              >
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={decision.timeoutMs}
+                    onChange={(event) =>
+                      updateDecision(
+                        "timeoutMs",
+                        Number(event.target.value) || 1500,
+                      )
+                    }
+                    type="number"
+                    min={250}
+                    max={60000}
+                    step={250}
+                    className="w-28"
+                    disableDebounce
+                    variant={isLightBackground ? "dark" : "default"}
+                  />
+                  <span className="text-xs vassist-text-muted">ms</span>
+                </div>
+              </SettingsRow>
+
+              {decision.provider === "desktop-local" && (
+                <SettingsRow
+                  label="Context Size"
+                  targetId="llm.decision.contextSize"
+                  description="Maximum tokens per local decision request. Larger contexts use more memory."
+                  layout="stacked"
+                >
+                  <Input
+                    type="number"
+                    min="512"
+                    step="512"
+                    value={decision.contextSize}
+                    onChange={(event) =>
+                      updateDecision(
+                        "contextSize",
+                        parseInt(event.target.value, 10) || 4096,
+                      )
+                    }
+                    variant={isLightBackground ? "dark" : "default"}
+                  />
+                </SettingsRow>
+              )}
+            </SettingsGroup>
           )}
         </>
       )}

@@ -26,6 +26,7 @@ import {
   MmdAnimationSpan,
   MmdCompositeAnimation,
 } from "babylon-mmd/esm/Runtime/Animation/mmdCompositeAnimation";
+import { VpdLoader } from "babylon-mmd/esm/Loader/vpdLoader";
 // Import camera animation runtime to enable camera animation evaluation
 import "babylon-mmd/esm/Runtime/Animation/mmdRuntimeCameraAnimation";
 import {
@@ -137,6 +138,7 @@ export class AnimationManager {
   private readonly mmdModel: MmdModelLike;
   private readonly bvmdLoader: AnimationLoaderLike;
   private readonly vmdLoader: AnimationLoaderLike;
+  private readonly vpdLoader: VpdLoader;
   private readonly getRandomAnimation: (
     category: string,
   ) => SceneAnimationConfigLike | null;
@@ -233,6 +235,11 @@ export class AnimationManager {
   private _isPaused: boolean;
   private _pausedTimeScale: number | null;
   private disposed: boolean;
+  private vpdPoseSpan: MmdAnimationSpan | null;
+  private vpdPoseLoadVersion: number;
+  private vpdPoseActive: boolean;
+  private vpdPreviousAnimationDuration: number | null;
+  private vpdPreviousFrame: number;
 
   /**
    * Create AnimationManager instance
@@ -266,6 +273,7 @@ export class AnimationManager {
     this.mmdModel = mmdModel;
     this.bvmdLoader = bvmdLoader;
     this.vmdLoader = vmdLoader;
+    this.vpdLoader = new VpdLoader(scene);
 
     // Animation context functions
     this.getRandomAnimation =
@@ -410,6 +418,11 @@ export class AnimationManager {
     this._isPaused = false;
     this._pausedTimeScale = null;
     this.disposed = false;
+    this.vpdPoseSpan = null;
+    this.vpdPoseLoadVersion = 0;
+    this.vpdPoseActive = false;
+    this.vpdPreviousAnimationDuration = null;
+    this.vpdPreviousFrame = 0;
     this.blinkCompatibleMorphs = [];
 
     Logger.log("AnimationManager", "Created");
@@ -1497,6 +1510,14 @@ export class AnimationManager {
     customAnimation: SceneAnimationConfigLike | null = null,
   ): Promise<void> {
     if (this.disposed) return;
+    ++this.vpdPoseLoadVersion;
+
+    // Keep the manually applied pose stable during normal idle transitions.
+    // Any explicit action in another state takes ownership of playback.
+    if (this.vpdPoseActive) {
+      if (newState === AssistantState.IDLE) return;
+      this._removeVpdPose();
+    }
 
     if (
       newState !== AssistantState.SPEAKING &&
@@ -1664,6 +1685,8 @@ export class AnimationManager {
     stateBehavior: StateBehaviorLike | null = null,
   ): Promise<void> {
     if (this.disposed) return;
+    if (this.vpdPoseActive) this._removeVpdPose();
+    const actionVersion = ++this.vpdPoseLoadVersion;
 
     const behavior = stateBehavior || StateBehavior[this.currentState];
 
@@ -1674,6 +1697,7 @@ export class AnimationManager {
 
     // Load animation
     const loadedAnimation = await this.loadAnimation(animationConfig);
+    if (this.disposed || actionVersion !== this.vpdPoseLoadVersion) return;
     if (!loadedAnimation) {
       Logger.error(
         "AnimationManager",
@@ -1700,6 +1724,8 @@ export class AnimationManager {
         this.cleanupCameraAnimation();
       }
     }
+
+    if (this.disposed || actionVersion !== this.vpdPoseLoadVersion) return;
 
     // Handle transition between different animations
     // Keep old spans active during transition for smooth blending
@@ -2262,6 +2288,8 @@ export class AnimationManager {
       return;
     }
 
+    if (this.vpdPoseActive) return;
+
     // We'll override them in onAfterRen
 
     // CRITICAL: Sync camera animation time with model animation for looping emotes
@@ -2560,6 +2588,7 @@ export class AnimationManager {
    * Simple approach: Calculate blink timing based on absolute time, apply directly
    */
   onAfterRender(): void {
+    if (this.vpdPoseActive) return;
     const blinkAnimation = this.blinkAnimation;
     const shouldDisableBlink =
       this.disposed ||
@@ -2612,11 +2641,143 @@ export class AnimationManager {
     }
   }
 
+  /** Apply a VPD pose as a persistent model pose until another action starts. */
+  async applyVpdPose(blob: Blob): Promise<void> {
+    if (this.disposed) return;
+    const loadVersion = ++this.vpdPoseLoadVersion;
+    const buffer = await blob.arrayBuffer();
+    if (this.disposed || loadVersion !== this.vpdPoseLoadVersion) return;
+
+    const animation = this.vpdLoader.loadFromBuffer(
+      `user-pose-${loadVersion}`,
+      buffer,
+    );
+    if (this.disposed || loadVersion !== this.vpdPoseLoadVersion) return;
+
+    if (this._isPaused) this.resume();
+    this._removeVpdPose(false);
+    this.clearAllSpans();
+    this.oldSpansToRemove = null;
+    this.oldSpansRemovalFrame = null;
+    this.compositePrimaryLoaded = null;
+    this.compositeStitchedFillSpans = [];
+    this.compositeTargetDuration = 0;
+    this.compositeMode = false;
+    this.compositeConfig = null;
+    this.compositeAnimation = new MmdCompositeAnimation(
+      `assistantComposite_vpdPose_${loadVersion}`,
+    );
+    const currentFrame = this.mmdRuntime.currentFrameTime;
+    this.vpdPoseSpan = new MmdAnimationSpan(
+      animation,
+      animation.startFrame,
+      Number.MAX_SAFE_INTEGER,
+      currentFrame - animation.startFrame,
+    );
+    this.compositeAnimation.addSpan(this.vpdPoseSpan);
+
+    this._replaceRuntimeAnimation(this.compositeAnimation);
+    if (this.vpdPreviousAnimationDuration === null) {
+      this.vpdPreviousAnimationDuration =
+        this.mmdRuntime.animationFrameTimeDuration;
+      this.vpdPreviousFrame = currentFrame;
+    }
+    this.mmdRuntime.setManualAnimationDuration(Number.MAX_SAFE_INTEGER);
+    this.vpdPoseActive = true;
+    this.currentAnimationConfig = null;
+    this.currentLoadedAnimation = null;
+    this.currentAnimationDuration = 0;
+    this._blinkMorphsApplied = false;
+    this._liveLipSyncMorphsApplied = false;
+    this.liveLipSyncWeights = null;
+    this.genericLipSyncAudio = null;
+    this.genericSpeechStartedAt = null;
+    ++this.genericLipSyncLoadToken;
+
+    // Force evaluation so the pose appears immediately, including while the
+    // runtime is paused or close to the end of its previous manual duration.
+    await this.mmdRuntime.seekAnimation(currentFrame, true);
+  }
+
+  /** Whether a saved VPD pose currently owns model playback. */
+  isVpdPoseActive(): boolean {
+    return this.vpdPoseActive;
+  }
+
+  /** Clear a manually applied pose and resume the normal idle animation. */
+  async clearVpdPose(): Promise<void> {
+    ++this.vpdPoseLoadVersion;
+    if (!this.vpdPoseActive) return;
+    this._removeVpdPose();
+    if (this.isInitialized && !this.disposed) {
+      await this.transitionToState(AssistantState.IDLE);
+    }
+  }
+
+  private _removeVpdPose(restoreDuration = true): void {
+    if (!this.vpdPoseActive && !this.vpdPoseSpan) return;
+    ++this.vpdPoseLoadVersion;
+    if (this.vpdPoseSpan) {
+      this.compositeAnimation.removeSpan(this.vpdPoseSpan);
+      this.vpdPoseSpan = null;
+    }
+    this.vpdPoseActive = false;
+    this.currentAnimationConfig = null;
+    this.currentLoadedAnimation = null;
+    this.currentAnimationDuration = 0;
+    if (
+      restoreDuration &&
+      this.vpdPreviousAnimationDuration !== null &&
+      Number.isFinite(this.vpdPreviousAnimationDuration) &&
+      this.vpdPreviousAnimationDuration > 0
+    ) {
+      this.mmdRuntime.setManualAnimationDuration(
+        Math.max(
+          this.vpdPreviousAnimationDuration +
+            Math.max(
+              0,
+              this.mmdRuntime.currentFrameTime - this.vpdPreviousFrame,
+            ),
+          this.mmdRuntime.currentFrameTime + 300,
+        ),
+      );
+    }
+    if (restoreDuration) this.vpdPreviousAnimationDuration = null;
+  }
+
+  private _replaceRuntimeAnimation(animation: MmdCompositeAnimation): void {
+    this.mmdModel.setRuntimeAnimation(null);
+    if (this.runtimeAnimationHandle !== null) {
+      const modelWithDestroy = this.mmdModel as MmdModelLike & {
+        destroyRuntimeAnimation?: (handle: number) => boolean;
+      };
+      modelWithDestroy.destroyRuntimeAnimation?.(this.runtimeAnimationHandle);
+    }
+    this.runtimeAnimationHandle =
+      this.mmdModel.createRuntimeAnimation(animation);
+    this.mmdModel.setRuntimeAnimation(this.runtimeAnimationHandle);
+  }
+
+  private _destroyRuntimeAnimation(): void {
+    this.mmdModel.setRuntimeAnimation(null);
+    if (this.runtimeAnimationHandle !== null) {
+      const modelWithDestroy = this.mmdModel as MmdModelLike & {
+        destroyRuntimeAnimation?: (handle: number) => boolean;
+      };
+      modelWithDestroy.destroyRuntimeAnimation?.(this.runtimeAnimationHandle);
+      this.runtimeAnimationHandle = null;
+    }
+  }
+
   /**
    * Set real-time mouth weights without changing the currently running body animation.
    * The values are applied after babylon-mmd evaluates its animation tracks.
    */
   setLiveLipSyncWeights(weights: LiveLipSyncMouthWeights | null): void {
+    if (weights) {
+      ++this.vpdPoseLoadVersion;
+      if (this.vpdPoseActive) this._removeVpdPose();
+    }
     this.liveLipSyncWeights = weights;
     if (!weights && this._liveLipSyncMorphsApplied) {
       const morphController = this.mmdModel.morph;
@@ -2634,6 +2795,10 @@ export class AnimationManager {
    * with actual playback without changing the active body animation.
    */
   setGenericLipSyncAudio(audio: HTMLAudioElement | null): void {
+    if (audio) {
+      ++this.vpdPoseLoadVersion;
+      if (this.vpdPoseActive) this._removeVpdPose();
+    }
     this.genericLipSyncAudio = audio;
     const loadToken = ++this.genericLipSyncLoadToken;
 
@@ -2673,7 +2838,7 @@ export class AnimationManager {
   }
 
   private _applyTtsLipSyncMorphs(): void {
-    if (this.disposed) return;
+    if (this.disposed || this.vpdPoseActive) return;
 
     let weights = this.liveLipSyncWeights;
     if (!weights) weights = this._sampleGenericLipSyncWeights();
@@ -3053,6 +3218,8 @@ export class AnimationManager {
     fillCategory = "talking",
     options: CompositePlayOptions = {},
   ): Promise<void> {
+    if (this.vpdPoseActive) this._removeVpdPose();
+    const actionVersion = ++this.vpdPoseLoadVersion;
     const primaryWeight = options.primaryWeight ?? 1.0;
     const fillWeight = options.fillWeight ?? 0.5;
 
@@ -3086,6 +3253,7 @@ export class AnimationManager {
         `Loading primary animation from blob URL: ${id}`,
       );
       primaryLoaded = await this.loadAnimationFromBlob(blobUrl, id);
+      if (this.disposed || actionVersion !== this.vpdPoseLoadVersion) return;
 
       // Create temporary config for blob animation
       primaryAnimConfig = {
@@ -3108,6 +3276,7 @@ export class AnimationManager {
         return;
       }
       primaryLoaded = await this.loadAnimation(primaryAnim);
+      if (this.disposed || actionVersion !== this.vpdPoseLoadVersion) return;
       primaryAnimConfig = primaryAnim;
     }
 
@@ -3147,6 +3316,7 @@ export class AnimationManager {
       fillAnimations,
       targetDuration,
     );
+    if (this.disposed || actionVersion !== this.vpdPoseLoadVersion) return;
     Logger.log(
       "AnimationManager",
       `Built stitched timeline with ${stitchedFillSpans.length} fill segments`,
@@ -3454,6 +3624,8 @@ export class AnimationManager {
    * @param {boolean} force - If true, interrupt current animation and play immediately
    */
   queueAnimation(queueEntry: AnimationQueueEntry, force = false): void {
+    ++this.vpdPoseLoadVersion;
+    if (this.vpdPoseActive) this._removeVpdPose();
     Logger.log(
       "${getTimestamp()}",
       `[AnimationManager] [QUEUE] Adding to queue (force=${force}):`,
@@ -3789,6 +3961,8 @@ export class AnimationManager {
 
     // Set disposed flag to prevent further operations
     this.disposed = true;
+    ++this.vpdPoseLoadVersion;
+    this._removeVpdPose();
     this.genericLipSyncLoadToken++;
     this.genericLipSyncAudio = null;
     this.liveLipSyncWeights = null;
@@ -3821,6 +3995,7 @@ export class AnimationManager {
 
     // Clear all spans
     this.clearAllSpans();
+    this._destroyRuntimeAnimation();
 
     // Clear caches
     this.loadedAnimations.clear();

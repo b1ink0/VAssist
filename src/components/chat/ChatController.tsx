@@ -103,6 +103,7 @@ import {
   useUIConfig,
 } from "../../hooks/config/useConfigUI";
 import { ComposerMenu } from "./ComposerMenu";
+import { useAssistantControlTheme } from "./assistant-controls/hooks/useAssistantControlTheme";
 import { ANDROID_SYSTEM_INSET_TOP } from "./historyLayout";
 import Logger from "../../services/common/LoggerService";
 import {
@@ -345,6 +346,7 @@ const ChatController = ({
   const composerAIConfig = useAIConfig();
   const modelConnection = useRef({ key: "", revision: 0 });
   const chatInputRef = useRef<HTMLElement | null>(null);
+  const androidChatOptionsRef = useRef<HTMLDivElement | null>(null);
   const streamAbortControllerRef = useRef<AbortController | null>(null); // Track current stream to allow cancellation
   const hasAutoOpenedAndroidChatRef = useRef(false);
   const hasAutoOpenedNormalChatRef = useRef(false);
@@ -358,6 +360,12 @@ const ChatController = ({
   const isAssistantReady = useIsAssistantReady();
   const isChatInputVisible = useIsChatInputVisible();
   const isChatContainerVisible = useIsChatContainerVisible();
+  const isAndroidChatOptionsLight = useAssistantControlTheme({
+    buttonRef: androidChatOptionsRef,
+    shouldRender: isAndroid && !isChatContainerVisible,
+    isDragging: false,
+    mode: uiConfig.backgroundDetection?.mode,
+  });
   const chatMessages = useChatMessages();
   const lastContextUsage = chatMessages.findLast(
     (message) => message.role === "assistant",
@@ -1997,14 +2005,15 @@ const ChatController = ({
             !(_isVoiceMode && uiConfig.enableModelLoading) &&
             !xr.active && (
               <div
+                ref={androidChatOptionsRef}
                 className="fixed right-3 z-[10020]"
                 style={{ top: `calc(${ANDROID_SYSTEM_INSET_TOP} + 10px)` }}
               >
                 <ComposerMenu
-                  isLightBackground={false}
+                  isLightBackground={isAndroidChatOptionsLight}
                   triggerIcon="chat-controls"
                   triggerLabel="Chat options"
-                  triggerClassName="glass-button flex h-12 w-12 items-center justify-center rounded-full"
+                  triggerClassName={`glass-button ${isAndroidChatOptionsLight ? "glass-button-dark" : ""} flex h-12 w-12 items-center justify-center rounded-full`}
                   side="bottom"
                   align="end"
                   compact

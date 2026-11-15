@@ -3,6 +3,7 @@ import { Icon } from "../../icons";
 import { useDesktopApi } from "../../../hooks/useDesktopStore";
 import { isDesktop } from "../../../utils/PlatformUtils";
 import { Button, Select, Input, SettingsRow } from "../../ui";
+import SettingsGroup from "../shared/SettingsGroup";
 import { DEFAULT_ENDPOINTS } from "../../../config/serviceEndpoints";
 import RemoteModelPicker from "../shared/RemoteModelPicker";
 import LocalLLMModelManager from "./LocalLLMModelManager";
@@ -521,7 +522,7 @@ const DesktopLLMConfig = ({
         </>
       )}
       {(view === "all" || view === "connection") && (
-        <>
+        <SettingsGroup className="gap-0">
           <SettingsRow label="Endpoint URL" layout="stacked">
             <Input
               type="text"
@@ -542,7 +543,7 @@ const DesktopLLMConfig = ({
               isLightBackground={isLightBackground}
             />
           </SettingsRow>
-        </>
+        </SettingsGroup>
       )}
       {(view === "all" || view === "generation") && (
         <LLMParameterSettings

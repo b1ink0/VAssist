@@ -5,6 +5,7 @@
 
 import { Input, SettingsRow } from "../../ui";
 import RemoteModelPicker from "../shared/RemoteModelPicker";
+import SettingsGroup from "../shared/SettingsGroup";
 
 interface OpenAISTTConfigShape {
   apiKey?: string;
@@ -41,7 +42,7 @@ const OpenAISTTConfig = ({
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <SettingsGroup>
       {/* API Key */}
       <SettingsRow
         label="API Key *"
@@ -68,7 +69,7 @@ const OpenAISTTConfig = ({
           isLightBackground={isLightBackground}
         />
       </SettingsRow>
-    </div>
+    </SettingsGroup>
   );
 };
 

@@ -12,6 +12,7 @@ import {
   LuScreenShareOff,
   LuEllipsis,
   LuMonitor,
+  LuPersonStanding,
 } from "react-icons/lu";
 import { HiDotsHorizontal } from "react-icons/hi";
 
@@ -72,6 +73,9 @@ export const iconMap = {
   image: HeroIconsSolid.PhotoIcon,
   photo: HeroIconsSolid.PhotoIcon,
   camera: HeroIconsSolid.CameraIcon,
+  "video-camera": HeroIconsSolid.VideoCameraIcon,
+  pose: LuPersonStanding,
+  share: HeroIconsSolid.ShareIcon,
   "screen-share": LuScreenShare,
   "screen-share-off": LuScreenShareOff,
   music: HeroIconsSolid.MusicalNoteIcon,

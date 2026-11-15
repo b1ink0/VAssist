@@ -1,14 +1,18 @@
 # Avatar, Motions, and Emotes
 
+<script setup>
+import AppIcon from "../.vitepress/theme/components/AppIcon.vue"
+</script>
+
 Settings → 3D is where you manage everything that shapes how the Live Assistant looks and moves: MMD-style models and stages, VMD motions, and emotes. It's split into five sub-tabs.
 
-| Sub-tab     | What's here                                                |
-| ----------- | ---------------------------------------------------------- |
-| Display     | Avatar on/off, reload, portrait mode, position preset      |
-| Performance | Physics, frame rate cap, render quality                    |
+| Sub-tab     | What's here                                                                            |
+| ----------- | -------------------------------------------------------------------------------------- |
+| Display     | Avatar on/off, reload, portrait mode, position preset                                  |
+| Performance | Physics, frame rate cap, render quality                                                |
 | Models      | Switch between the **Avatars** and **Stages** sections to import and manage PMX assets |
-| Animations  | Import VMD motions, assign them to animation categories    |
-| Emotes      | Build named reactions from audio, motion, and camera clips |
+| Animations  | Import VMD motions, assign them to animation categories                                |
+| Emotes      | Build named reactions from audio, motion, and camera clips                             |
 
 ## Models and stages
 
@@ -54,6 +58,10 @@ An emote is a named, triggerable reaction that can combine:
 Create them one by one, or bulk-import from a ZIP. Once they're in the library you can trigger them from the live emote panel. You can also assign categories so emotes fire automatically during matching animation states.
 
 Library management: name, category, hide without deleting, delete one, or clear a whole category.
+
+## VPD poses
+
+Import and delete `.vpd` files in **Settings > 3D > Animations**. In Live Assistant controls, open the <AppIcon name="user" /> avatar panel and tap <AppIcon name="pose" /> **Show saved poses**. Select a pose to apply it. Tap **No pose** to clear it, or tap <AppIcon name="user" /> **Show avatar models** to return to the model list. Speech and emotes replace the active pose. Poses are included with motions in selective backups.
 
 ## Related guides
 

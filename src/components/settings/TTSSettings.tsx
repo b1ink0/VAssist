@@ -263,7 +263,7 @@ const TTSSettings = ({
   const renderRemoteProfileBar = (
     provider: TTSRemoteProviderProfile["provider"],
   ) => (
-    <div className="flex flex-col gap-2">
+    <SettingsGroup className="gap-2 p-3">
       <label className="block text-sm font-medium vassist-text-primary">
         Saved Backends
       </label>
@@ -326,7 +326,7 @@ const TTSSettings = ({
           <Icon name="delete" size={14} />
         </Button>
       </div>
-    </div>
+    </SettingsGroup>
   );
 
   // Filter providers based on platform
@@ -590,48 +590,52 @@ const TTSSettings = ({
           {ttsConfig.provider === TTSProviders.OPENAI && (
             <>
               {renderRemoteProfileBar("openai")}
-              <SettingsRow
-                label="API Key"
-                targetId="tts.openai.apiKey"
-                layout="stacked"
-              >
-                <Input
-                  type="password"
-                  value={ttsConfig.openai.apiKey}
-                  onChange={(e) =>
-                    updateTTSConfig("openai.apiKey", e.target.value)
-                  }
-                  placeholder="sk-..."
-                  variant={isLightBackground ? "dark" : "default"}
-                />
-              </SettingsRow>
-              <SettingsRow
-                label="Model"
-                targetId="tts.openai.model"
-                layout="stacked"
-              >
-                <RemoteModelPicker
-                  value={ttsConfig.openai.model}
-                  onChange={(value) => updateTTSConfig("openai.model", value)}
-                  provider="openai"
-                  apiKey={ttsConfig.openai.apiKey}
-                  placeholder="tts-1"
-                  isLightBackground={isLightBackground}
-                />
-              </SettingsRow>
-              <SettingsRow label="Voice" layout="stacked">
-                <Select
-                  value={ttsConfig.openai.voice}
-                  onChange={(e) =>
-                    updateTTSConfig("openai.voice", e.target.value)
-                  }
-                  variant={isLightBackground ? "dark" : "default"}
-                  options={Object.entries(OpenAIVoices).map(([key, value]) => ({
-                    value,
-                    label: key.charAt(0) + key.slice(1).toLowerCase(),
-                  }))}
-                />
-              </SettingsRow>
+              <SettingsGroup>
+                <SettingsRow
+                  label="API Key"
+                  targetId="tts.openai.apiKey"
+                  layout="stacked"
+                >
+                  <Input
+                    type="password"
+                    value={ttsConfig.openai.apiKey}
+                    onChange={(e) =>
+                      updateTTSConfig("openai.apiKey", e.target.value)
+                    }
+                    placeholder="sk-..."
+                    variant={isLightBackground ? "dark" : "default"}
+                  />
+                </SettingsRow>
+                <SettingsRow
+                  label="Model"
+                  targetId="tts.openai.model"
+                  layout="stacked"
+                >
+                  <RemoteModelPicker
+                    value={ttsConfig.openai.model}
+                    onChange={(value) => updateTTSConfig("openai.model", value)}
+                    provider="openai"
+                    apiKey={ttsConfig.openai.apiKey}
+                    placeholder="tts-1"
+                    isLightBackground={isLightBackground}
+                  />
+                </SettingsRow>
+                <SettingsRow label="Voice" layout="stacked">
+                  <Select
+                    value={ttsConfig.openai.voice}
+                    onChange={(e) =>
+                      updateTTSConfig("openai.voice", e.target.value)
+                    }
+                    variant={isLightBackground ? "dark" : "default"}
+                    options={Object.entries(OpenAIVoices).map(
+                      ([key, value]) => ({
+                        value,
+                        label: key.charAt(0) + key.slice(1).toLowerCase(),
+                      }),
+                    )}
+                  />
+                </SettingsRow>
+              </SettingsGroup>
             </>
           )}
 
@@ -639,67 +643,72 @@ const TTSSettings = ({
           {ttsConfig.provider === TTSProviders.OPENAI_COMPATIBLE && (
             <>
               {renderRemoteProfileBar("openai-compatible")}
-              <SettingsRow
-                label="Endpoint URL"
-                targetId="tts.openaiCompatible.endpoint"
-                layout="stacked"
-              >
-                <Input
-                  type="text"
-                  value={ttsConfig["openai-compatible"]?.endpoint ?? ""}
-                  onChange={(e) =>
-                    updateTTSConfig(
-                      "openai-compatible.endpoint",
-                      e.target.value,
-                    )
-                  }
-                  placeholder={DEFAULT_ENDPOINTS.openaiCompatible}
-                  variant={isLightBackground ? "dark" : "default"}
-                />
-              </SettingsRow>
-              <SettingsRow
-                label="API Key (Optional)"
-                targetId="tts.openaiCompatible.apiKey"
-                layout="stacked"
-              >
-                <Input
-                  type="password"
-                  value={ttsConfig["openai-compatible"]?.apiKey ?? ""}
-                  onChange={(e) =>
-                    updateTTSConfig("openai-compatible.apiKey", e.target.value)
-                  }
-                  placeholder="Leave empty if not required"
-                  variant={isLightBackground ? "dark" : "default"}
-                />
-              </SettingsRow>
-              <SettingsRow
-                label="Model"
-                targetId="tts.openaiCompatible.model"
-                layout="stacked"
-              >
-                <RemoteModelPicker
-                  value={ttsConfig["openai-compatible"]?.model ?? ""}
-                  onChange={(value) =>
-                    updateTTSConfig("openai-compatible.model", value)
-                  }
-                  provider="ollama"
-                  endpoint={ttsConfig["openai-compatible"]?.endpoint ?? ""}
-                  apiKey={ttsConfig["openai-compatible"]?.apiKey ?? ""}
-                  placeholder="tts"
-                  isLightBackground={isLightBackground}
-                />
-              </SettingsRow>
-              <SettingsRow label="Voice" layout="stacked">
-                <Input
-                  type="text"
-                  value={ttsConfig["openai-compatible"]?.voice ?? ""}
-                  onChange={(e) =>
-                    updateTTSConfig("openai-compatible.voice", e.target.value)
-                  }
-                  placeholder="default"
-                  variant={isLightBackground ? "dark" : "default"}
-                />
-              </SettingsRow>
+              <SettingsGroup>
+                <SettingsRow
+                  label="Endpoint URL"
+                  targetId="tts.openaiCompatible.endpoint"
+                  layout="stacked"
+                >
+                  <Input
+                    type="text"
+                    value={ttsConfig["openai-compatible"]?.endpoint ?? ""}
+                    onChange={(e) =>
+                      updateTTSConfig(
+                        "openai-compatible.endpoint",
+                        e.target.value,
+                      )
+                    }
+                    placeholder={DEFAULT_ENDPOINTS.openaiCompatible}
+                    variant={isLightBackground ? "dark" : "default"}
+                  />
+                </SettingsRow>
+                <SettingsRow
+                  label="API Key (Optional)"
+                  targetId="tts.openaiCompatible.apiKey"
+                  layout="stacked"
+                >
+                  <Input
+                    type="password"
+                    value={ttsConfig["openai-compatible"]?.apiKey ?? ""}
+                    onChange={(e) =>
+                      updateTTSConfig(
+                        "openai-compatible.apiKey",
+                        e.target.value,
+                      )
+                    }
+                    placeholder="Leave empty if not required"
+                    variant={isLightBackground ? "dark" : "default"}
+                  />
+                </SettingsRow>
+                <SettingsRow
+                  label="Model"
+                  targetId="tts.openaiCompatible.model"
+                  layout="stacked"
+                >
+                  <RemoteModelPicker
+                    value={ttsConfig["openai-compatible"]?.model ?? ""}
+                    onChange={(value) =>
+                      updateTTSConfig("openai-compatible.model", value)
+                    }
+                    provider="ollama"
+                    endpoint={ttsConfig["openai-compatible"]?.endpoint ?? ""}
+                    apiKey={ttsConfig["openai-compatible"]?.apiKey ?? ""}
+                    placeholder="tts"
+                    isLightBackground={isLightBackground}
+                  />
+                </SettingsRow>
+                <SettingsRow label="Voice" layout="stacked">
+                  <Input
+                    type="text"
+                    value={ttsConfig["openai-compatible"]?.voice ?? ""}
+                    onChange={(e) =>
+                      updateTTSConfig("openai-compatible.voice", e.target.value)
+                    }
+                    placeholder="default"
+                    variant={isLightBackground ? "dark" : "default"}
+                  />
+                </SettingsRow>
+              </SettingsGroup>
             </>
           )}
         </>

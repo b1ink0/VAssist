@@ -49,6 +49,7 @@ import emoteStorageService from "../../services/storage/EmoteStorageService";
 import emotePlayerService from "../../services/mmd/EmotePlayerService";
 import { modelStorageService } from "../../services/storage/ModelStorageService";
 import { stageStorageService } from "../../services/storage/StageStorageService";
+import poseStorageService from "../../services/storage/PoseStorageService";
 const ARPlacementGuide = lazy(async () => {
   const module = await import("../ar/ARPlacementGuide");
   return { default: module.ARPlacementGuide };
@@ -81,6 +82,7 @@ import type {
   EmoteListItem,
   StoredModelItem,
   StoredStageItem,
+  StoredPoseItem,
 } from "./assistant-controls/types";
 import { AssistantControlPanels } from "./assistant-controls/components/AssistantControlPanels";
 import { AssistantControlStack } from "./assistant-controls/components/AssistantControlStack";
@@ -227,6 +229,11 @@ const AssistantControlDock = ({
   const [isZoomExpanded, setIsZoomExpanded] = useState(false);
   const [models, setModels] = useState<StoredModelItem[]>([]);
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
+  const [poses, setPoses] = useState<StoredPoseItem[]>([]);
+  const [poseMode, setPoseMode] = useState(false);
+  const [activePoseId, setActivePoseId] = useState<string | null>(null);
+  const [poseBusy, setPoseBusy] = useState(false);
+  const [poseError, setPoseError] = useState<string | null>(null);
   const [panelMode, setPanelMode] = useState("avatar"); // 'avatar' or 'stage'
   const [stages, setStages] = useState<StoredStageItem[]>([]);
   const [selectedStageId, setSelectedStageId] = useState<string | null>(null);
@@ -338,6 +345,83 @@ const AssistantControlDock = ({
   }, [isAvatarPanelOpen, panelMode]);
 
   useEffect(() => {
+    if (!isAvatarPanelOpen || panelMode !== "avatar" || !poseMode) return;
+    poseStorageService
+      .getPosesList()
+      .then(setPoses)
+      .catch((error) => {
+        Logger.error("AssistantControlDock", "Failed to load poses:", error);
+        setPoseError("Could not load saved poses.");
+      });
+  }, [isAvatarPanelOpen, panelMode, poseMode]);
+
+  const handleApplyPose = useCallback(
+    async (id: string) => {
+      setPoseBusy(true);
+      setPoseError(null);
+      try {
+        if (isAutoPlayActive) {
+          const connected = getXrClientRuntime();
+          if (connected) await connected.action("emote.autoplay.stop", []);
+          else emotePlayerService.stopAutoPlay();
+          setIsAutoPlayActive(false);
+        }
+        const connected = getXrClientRuntime();
+        if (connected) await connected.action("emote.stop", []);
+        else emotePlayerService.stopEmote();
+        const stored = await poseStorageService.getPose(id);
+        if (!stored) throw new Error("Saved pose could not be found.");
+        const animationManager = (
+          sceneRef.current?.metadata as unknown as
+            | {
+                animationManager?: {
+                  applyVpdPose?: (blob: Blob) => Promise<void>;
+                };
+              }
+            | undefined
+        )?.animationManager;
+        if (!animationManager?.applyVpdPose)
+          throw new Error("Pose playback is unavailable.");
+        await animationManager.applyVpdPose(stored.poseData);
+        setActivePoseId(id);
+      } catch (error) {
+        Logger.error("AssistantControlDock", "Failed to apply pose:", error);
+        setPoseError(
+          error instanceof Error ? error.message : "Could not apply this pose.",
+        );
+      } finally {
+        setPoseBusy(false);
+      }
+    },
+    [isAutoPlayActive, sceneRef],
+  );
+
+  const handleClearPose = useCallback(async () => {
+    setPoseBusy(true);
+    setPoseError(null);
+    try {
+      const animationManager = (
+        sceneRef.current?.metadata as unknown as
+          | {
+              animationManager?: { clearVpdPose?: () => Promise<void> };
+            }
+          | undefined
+      )?.animationManager;
+      if (!animationManager?.clearVpdPose)
+        throw new Error("Pose playback is unavailable.");
+      await animationManager.clearVpdPose();
+      setActivePoseId(null);
+    } catch (error) {
+      Logger.error("AssistantControlDock", "Failed to clear pose:", error);
+      setPoseError(
+        error instanceof Error ? error.message : "Could not clear pose.",
+      );
+    } finally {
+      setPoseBusy(false);
+    }
+  }, [sceneRef]);
+
+  useEffect(() => {
     if (isAvatarPanelOpen && panelMode === "stage") {
       stageStorageService
         .getStagesList()
@@ -401,10 +485,16 @@ const AssistantControlDock = ({
         getXrClientRuntime()?.getPlaybackState().autoPlay ??
         emotePlayerService.isAutoPlayActive();
       setIsAutoPlayActive(autoPlayActive);
+      const manager = sceneRef.current?.metadata?.animationManager as
+        | { isVpdPoseActive?: () => boolean }
+        | undefined;
+      setActivePoseId((id) =>
+        id && manager?.isVpdPoseActive?.() !== true ? null : id,
+      );
     }, 100);
 
     return () => clearInterval(checkPlayingState);
-  }, []);
+  }, [sceneRef]);
 
   /**
    * Handle delayed unmount for fade animation
@@ -1113,6 +1203,15 @@ const AssistantControlDock = ({
   const handleModelSelect = useCallback(
     async (modelId: string | null) => {
       try {
+        const animationManager = (
+          sceneRef.current?.metadata as unknown as
+            | {
+                animationManager?: { clearVpdPose?: () => Promise<void> };
+              }
+            | undefined
+        )?.animationManager;
+        await animationManager?.clearVpdPose?.();
+        setActivePoseId(null);
         if (xr.active) await xr.controller?.exit();
         const connected = getXrClientRuntime();
         if (connected) {
@@ -1137,7 +1236,7 @@ const AssistantControlDock = ({
         Logger.error("AssistantControlDock", "Failed to select model:", err);
       }
     },
-    [reloadScene, xr.active, xr.controller],
+    [reloadScene, sceneRef, xr.active, xr.controller],
   );
 
   const handleStageSelect = useCallback(
@@ -1273,6 +1372,11 @@ const AssistantControlDock = ({
         setIsARMode(false);
         recreateScene();
       } else {
+        setIsChatContainerVisible(false);
+        setIsChatInputVisible(false);
+        setIsHistoryPanelOpen(false);
+        setIsSettingsPanelOpen(false);
+        setIsQuickPanelOpen(false);
         setARModeRequested(true);
         setIsARMode(true);
         recreateScene();
@@ -1284,7 +1388,16 @@ const AssistantControlDock = ({
     } finally {
       if (!isARModeRequested()) setIsARToggling(false);
     }
-  }, [sceneRef, isARToggling, recreateScene]);
+  }, [
+    sceneRef,
+    isARToggling,
+    recreateScene,
+    setIsChatContainerVisible,
+    setIsChatInputVisible,
+    setIsHistoryPanelOpen,
+    setIsSettingsPanelOpen,
+    setIsQuickPanelOpen,
+  ]);
 
   const selectedAutoPlayCategory =
     uiConfig.emotePlayback?.autoPlayCategory || "all";
@@ -1412,8 +1525,6 @@ const AssistantControlDock = ({
     xr.active,
   ]);
 
-  if (!shouldRender && !xrAvailable) return null;
-
   const renderedButtonPos = dragVisualPos ?? buttonPos;
   const emotePanelHeight = Math.min(
     emotes.length > 0
@@ -1422,7 +1533,8 @@ const AssistantControlDock = ({
     ASSISTANT_CONTROL_PANEL_MAX_HEIGHT,
   );
   const avatarPanelHeight = Math.min(
-    (models.length + 1) * ASSISTANT_CONTROL_ROW_HEIGHT,
+    (poseMode ? Math.max(poses.length, 1) + 1 : models.length + 2) *
+      ASSISTANT_CONTROL_ROW_HEIGHT,
     ASSISTANT_CONTROL_PANEL_MAX_HEIGHT,
   );
   const stageDefinition = selectedStageId?.startsWith("builtin:")
@@ -1484,6 +1596,15 @@ const AssistantControlDock = ({
     onStageSelect: handleStageSelect,
     onPlayEmote: async (emoteId: string) => {
       try {
+        const animationManager = (
+          sceneRef.current?.metadata as unknown as
+            | {
+                animationManager?: { clearVpdPose?: () => Promise<void> };
+              }
+            | undefined
+        )?.animationManager;
+        await animationManager?.clearVpdPose?.();
+        setActivePoseId(null);
         if (isAutoPlayActive) {
           emotePlayerService.stopAutoPlay();
           setIsAutoPlayActive(false);
@@ -1513,13 +1634,22 @@ const AssistantControlDock = ({
       setIsAvatarPanelOpen(!(isAvatarPanelOpen && panelMode === "stage"));
       setPanelMode("stage");
     },
+    onApplyPose: (id: string) => {
+      void handleApplyPose(id);
+    },
+    onClearPose: () => {
+      void handleClearPose();
+    },
   };
 
   return (
     <>
       {isAndroid && (
         <Suspense fallback={null}>
-          <ARPlacementGuide />
+          <ARPlacementGuide
+            isChatOpen={isChatOpen}
+            isLightBackground={isLightBackground}
+          />
         </Suspense>
       )}
 
@@ -1562,6 +1692,9 @@ const AssistantControlDock = ({
         <div
           ref={dockBoundaryRef}
           className="contents"
+          style={
+            !shouldRender && !xrAvailable ? { display: "none" } : undefined
+          }
           onPointerDownCapture={() => {
             pointerInsideDock.current = true;
           }}
@@ -1580,8 +1713,13 @@ const AssistantControlDock = ({
             emotes={emotes}
             filteredEmotes={filteredEmotes}
             models={models}
+            poses={poses}
+            poseMode={poseMode}
+            poseBusy={poseBusy}
+            poseError={poseError}
             stages={stages}
             selectedModelId={selectedModelId}
+            activePoseId={activePoseId}
             selectedStageId={selectedStageId}
             selectedAutoPlayCategory={selectedAutoPlayCategory}
             autoPlayCategoryOptions={autoPlayCategoryOptions}
@@ -1602,6 +1740,10 @@ const AssistantControlDock = ({
             stickerBorderEnabled={uiConfig.stickerBorder?.enabled === true}
             actions={assistantControlActions}
             onSeek={handleEmoteSeek}
+            onTogglePoseMode={() => {
+              setPoseError(null);
+              setPoseMode((value) => !value);
+            }}
           />
           {xrPanelMotion.isMounted && (
             <XrControlPanel

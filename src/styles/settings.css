@@ -83,8 +83,8 @@
 }
 .settings-shell .glass-input,
 .settings-shell .glass-button {
-  backdrop-filter: none;
   -webkit-backdrop-filter: none;
+  backdrop-filter: none;
   box-shadow: none;
 }
 .settings-shell .glass-input {
@@ -151,8 +151,8 @@
   --settings-background: rgba(12, 12, 16, 0.76);
   --settings-field: rgba(255, 255, 255, 0.05);
   color: var(--vassist-inverse-text-primary);
-  backdrop-filter: blur(20px) saturate(160%);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(160%);
 }
 .settings-shell.settings-light:not([data-opaque-light="true"]) {
   --settings-background: rgba(255, 255, 255, 0.12);
@@ -163,6 +163,16 @@
   --vassist-border-color: rgba(255, 255, 255, 0.12);
   --vassist-border-strong-color: rgba(255, 255, 255, 0.25);
   --vassist-focus-ring-color: rgba(160, 160, 160, 0.45);
+}
+.settings-shell.settings-android:not([data-opaque-light="true"]) {
+  --settings-background: rgba(12, 12, 16, 0.56);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
+}
+.settings-shell.settings-light.settings-android:not(
+    [data-opaque-light="true"]
+  ) {
+  --settings-background: rgba(255, 255, 255, 0.14);
 }
 .settings-page-content > div:not([hidden]) {
   animation: settings-enter 180ms ease-out;
@@ -208,13 +218,13 @@
   --vassist-text-primary: rgba(255, 255, 255, 0.96);
   --vassist-text-secondary: rgba(255, 255, 255, 0.8);
   --vassist-text-muted: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
 }
 .settings-control-popup.settings-dark {
   --settings-background: rgba(12, 12, 16, 0.78);
-  backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -231,11 +241,18 @@
 }
 .settings-page-content > div:not([hidden]):has(.settings-loading) {
   display: flex;
+  width: 100%;
+  max-width: none;
+  align-self: stretch;
   min-height: 100%;
   flex: 1;
 }
+.settings-page-content div:has(.settings-loading) {
+  width: 100%;
+}
 .settings-loading {
   width: 100%;
+  flex: 1;
 }
 
 .settings-shell .settings-search:focus-visible {

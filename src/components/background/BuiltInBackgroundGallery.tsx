@@ -72,7 +72,7 @@ export default function BuiltInBackgroundGallery({
           First selected opens first
         </span>
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="grid grid-cols-3 gap-2">
         {BUILT_IN_BACKGROUNDS.map((background) => {
           const selected = selectedSet.has(background.id);
           const isDefault = effectiveSelectedIds[0] === background.id;
@@ -82,7 +82,7 @@ export default function BuiltInBackgroundGallery({
           return (
             <div
               key={background.id}
-              className={`group relative flex min-w-[132px] flex-1 basis-[calc(33.333%_-_0.5rem)] overflow-hidden rounded-lg border ${
+              className={`group relative min-w-0 overflow-hidden rounded-lg border ${
                 selected ? "border-white/45" : "border-white/10"
               }`}
             >

@@ -470,6 +470,7 @@ export class ARSessionController {
   }
 
   public dispose(): void {
+    this.arProvider.dispose?.();
     if (this.placementObserver) {
       this.scene.onPointerObservable.remove(this.placementObserver);
       this.placementObserver = null;

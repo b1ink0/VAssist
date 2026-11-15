@@ -3,7 +3,13 @@
  * Handles delete confirmations (chat, model, motion) and edit operations.
  */
 
-import { useState, useRef, useEffect, type KeyboardEvent } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 import { cn } from "../../utils/cn";
 import { Button, Input } from "../ui";
 import { Dialog as BaseDialog } from "@base-ui/react/dialog";
@@ -23,6 +29,7 @@ interface DialogProps {
   type?: DialogType;
   title: string;
   message?: string;
+  children?: ReactNode;
   itemId?: string;
   initialValue?: string;
   inputPlaceholder?: string;
@@ -70,6 +77,7 @@ const Dialog = ({
   type = "confirm",
   title,
   message,
+  children,
   itemId,
   initialValue = "",
   inputPlaceholder = "",
@@ -195,6 +203,7 @@ const Dialog = ({
                   {message}
                 </BaseDialog.Description>
               )}
+              {children}
               {errorMessage && (
                 <p
                   role="alert"

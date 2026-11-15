@@ -6,6 +6,7 @@
 import { Input, Select, SettingsRow } from "../../ui";
 import RemoteModelPicker from "../shared/RemoteModelPicker";
 import { DEFAULT_ENDPOINTS } from "../../../config/serviceEndpoints";
+import SettingsGroup from "../shared/SettingsGroup";
 
 interface OpenAICompatibleSTTConfigShape {
   endpoint?: string;
@@ -44,7 +45,7 @@ const OpenAICompatibleSTTConfig = ({
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <SettingsGroup>
       {/* Endpoint URL */}
       <SettingsRow
         label="Endpoint URL *"
@@ -112,7 +113,7 @@ const OpenAICompatibleSTTConfig = ({
           ]}
         />
       </SettingsRow>
-    </div>
+    </SettingsGroup>
   );
 };
 

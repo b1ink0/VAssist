@@ -41,6 +41,11 @@ export interface StoredStageItem {
   metadata: unknown;
 }
 
+export interface StoredPoseItem {
+  id: string;
+  name: string;
+}
+
 export interface PositionManagerForButton extends PositionManagerLike {
   applyPreset: (
     preset: string,
@@ -118,4 +123,6 @@ export interface AssistantControlActions {
   onCameraSaveToggle: () => void;
   onStickerBorderToggle: () => void;
   onToggleStagePanel: () => void;
+  onApplyPose: (poseId: string) => void;
+  onClearPose: () => void;
 }

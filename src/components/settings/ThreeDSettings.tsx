@@ -41,6 +41,7 @@ import { vmdConverterService } from "../../services/mmd/VMDConverterService";
 import { modelStorageService } from "../../services/storage/ModelStorageService";
 import StageSettings from "./StageSettings";
 import EmotePlaybackSettings from "./EmotePlaybackSettings";
+import PoseLibrarySettings from "./PoseLibrarySettings";
 import { motionStorageService } from "../../services/storage/MotionStorageService";
 import emoteStorageService from "../../services/storage/EmoteStorageService";
 import { isAndroid, isDesktop } from "../../utils/PlatformUtils";
@@ -2313,302 +2314,315 @@ const ThreeDSettings = ({
                         </SettingsRow>
                         {uiConfig.renderQuality ===
                           RenderQualityOptions.CUSTOM && (
-                          <div className="pt-3 pt-3  flex flex-col gap-4">
+                          <div className="pt-3 flex flex-col gap-4">
                             <p className="text-xs font-medium vassist-text-secondary">
                               Custom Quality Settings
                             </p>
 
-                            <SettingsRow
-                              label={<>Anti-Aliasing (MSAA)</>}
-                              layout="stacked"
-                            >
-                              <div className="flex min-w-0 items-center justify-between gap-3">
-                                <Select
-                                  value={
-                                    uiConfig.customQuality?.samples ||
-                                    DefaultCustomQualitySettings.samples
+                            <SettingsGroup>
+                              <SettingsRow
+                                label={<>Anti-Aliasing (MSAA)</>}
+                                layout="stacked"
+                              >
+                                <div className="flex min-w-0 items-center justify-between gap-3">
+                                  <Select
+                                    value={
+                                      uiConfig.customQuality?.samples ||
+                                      DefaultCustomQualitySettings.samples
+                                    }
+                                    onChange={(e) =>
+                                      handleCustomQualityChange(
+                                        "samples",
+                                        parseInt(e.target.value),
+                                      )
+                                    }
+                                    variant={
+                                      isLightBackground ? "dark" : "default"
+                                    }
+                                    options={[
+                                      { value: 1, label: "1x (Off)" },
+                                      { value: 2, label: "2x" },
+                                      { value: 4, label: "4x" },
+                                      { value: 8, label: "8x (High GPU)" },
+                                    ]}
+                                  />
+                                  <span className="text-xs vassist-text-muted">
+                                    {uiConfig.customQuality?.samples ||
+                                      DefaultCustomQualitySettings.samples}
+                                    x
+                                  </span>
+                                </div>
+                              </SettingsRow>
+
+                              <SettingsRow
+                                label="FXAA (Fast Anti-Aliasing)"
+                                description="Smooth edges without blur"
+                              >
+                                <Toggle
+                                  checked={
+                                    uiConfig.customQuality?.fxaaEnabled ??
+                                    DefaultCustomQualitySettings.fxaaEnabled
                                   }
-                                  onChange={(e) =>
+                                  onChange={(checked) =>
                                     handleCustomQualityChange(
-                                      "samples",
-                                      parseInt(e.target.value),
+                                      "fxaaEnabled",
+                                      checked,
                                     )
                                   }
-                                  variant={
-                                    isLightBackground ? "dark" : "default"
-                                  }
-                                  options={[
-                                    { value: 1, label: "1x (Off)" },
-                                    { value: 2, label: "2x" },
-                                    { value: 4, label: "4x" },
-                                    { value: 8, label: "8x (High GPU)" },
-                                  ]}
+                                  size="sm"
+                                  isLightBackground={isLightBackground}
                                 />
-                                <span className="text-xs vassist-text-muted">
-                                  {uiConfig.customQuality?.samples ||
-                                    DefaultCustomQualitySettings.samples}
-                                  x
-                                </span>
-                              </div>
-                            </SettingsRow>
+                              </SettingsRow>
+                            </SettingsGroup>
 
-                            <SettingsRow
-                              label="FXAA (Fast Anti-Aliasing)"
-                              description="Smooth edges without blur"
-                            >
-                              <Toggle
-                                checked={
-                                  uiConfig.customQuality?.fxaaEnabled ??
-                                  DefaultCustomQualitySettings.fxaaEnabled
-                                }
-                                onChange={(checked) =>
-                                  handleCustomQualityChange(
-                                    "fxaaEnabled",
-                                    checked,
-                                  )
-                                }
-                                size="sm"
-                                isLightBackground={isLightBackground}
-                              />
-                            </SettingsRow>
-
-                            <SettingsRow
-                              label="Bloom Effect"
-                              description="Glow on bright areas"
-                            >
-                              <Toggle
-                                checked={
-                                  uiConfig.customQuality?.bloomEnabled ??
-                                  DefaultCustomQualitySettings.bloomEnabled
-                                }
-                                onChange={(checked) =>
-                                  handleCustomQualityChange(
-                                    "bloomEnabled",
-                                    checked,
-                                  )
-                                }
-                                size="sm"
-                                isLightBackground={isLightBackground}
-                              />
-                            </SettingsRow>
-
-                            {(uiConfig.customQuality?.bloomEnabled ??
-                              DefaultCustomQualitySettings.bloomEnabled) && (
-                              <div className="pl-3 border-l border-current/10 flex flex-col gap-3">
-                                <SettingsRow
-                                  label={<>Bloom Threshold</>}
-                                  description={
-                                    <>Higher = only brightest areas glow</>
+                            <SettingsGroup>
+                              <SettingsRow
+                                label="Bloom Effect"
+                                description="Glow on bright areas"
+                              >
+                                <Toggle
+                                  checked={
+                                    uiConfig.customQuality?.bloomEnabled ??
+                                    DefaultCustomQualitySettings.bloomEnabled
                                   }
-                                  layout="stacked"
-                                >
-                                  <div className="flex min-w-0 items-center gap-3">
-                                    <RangeSlider
-                                      aria-label="Bloom Threshold"
-                                      min="0.5"
-                                      max="1.0"
-                                      step="0.05"
-                                      value={
-                                        uiConfig.customQuality
-                                          ?.bloomThreshold ||
-                                        DefaultCustomQualitySettings.bloomThreshold
-                                      }
-                                      onValueChange={(nextValue) =>
-                                        handleCustomQualityChange(
-                                          "bloomThreshold",
-                                          nextValue,
-                                        )
-                                      }
-                                    />
-                                    <span className="shrink-0 text-xs tabular-nums vassist-text-secondary">
-                                      {(
-                                        uiConfig.customQuality
-                                          ?.bloomThreshold ||
-                                        DefaultCustomQualitySettings.bloomThreshold
-                                      ).toFixed(2)}
-                                    </span>
-                                  </div>
-                                </SettingsRow>
-
-                                <SettingsRow
-                                  label={<>Bloom Intensity</>}
-                                  layout="stacked"
-                                >
-                                  <div className="flex min-w-0 items-center gap-3">
-                                    <RangeSlider
-                                      aria-label="Bloom Intensity"
-                                      min="0.05"
-                                      max="0.5"
-                                      step="0.05"
-                                      value={
-                                        uiConfig.customQuality?.bloomWeight ||
-                                        DefaultCustomQualitySettings.bloomWeight
-                                      }
-                                      onValueChange={(nextValue) =>
-                                        handleCustomQualityChange(
-                                          "bloomWeight",
-                                          nextValue,
-                                        )
-                                      }
-                                    />
-                                    <span className="shrink-0 text-xs tabular-nums vassist-text-secondary">
-                                      {(
-                                        uiConfig.customQuality?.bloomWeight ||
-                                        DefaultCustomQualitySettings.bloomWeight
-                                      ).toFixed(2)}
-                                    </span>
-                                  </div>
-                                </SettingsRow>
-
-                                <SettingsRow
-                                  label={<>Bloom Scale</>}
-                                  layout="stacked"
-                                >
-                                  <div className="flex min-w-0 items-center gap-3">
-                                    <RangeSlider
-                                      aria-label="Bloom Scale"
-                                      min="0.1"
-                                      max="1.0"
-                                      step="0.1"
-                                      value={
-                                        uiConfig.customQuality?.bloomScale ||
-                                        DefaultCustomQualitySettings.bloomScale
-                                      }
-                                      onValueChange={(nextValue) =>
-                                        handleCustomQualityChange(
-                                          "bloomScale",
-                                          nextValue,
-                                        )
-                                      }
-                                    />
-                                    <span className="shrink-0 text-xs tabular-nums vassist-text-secondary">
-                                      {(
-                                        uiConfig.customQuality?.bloomScale ||
-                                        DefaultCustomQualitySettings.bloomScale
-                                      ).toFixed(1)}
-                                    </span>
-                                  </div>
-                                </SettingsRow>
-
-                                <SettingsRow
-                                  label={<>Bloom Kernel Size</>}
-                                  layout="stacked"
-                                >
-                                  <div className="flex min-w-0 items-center justify-between gap-3">
-                                    <Select
-                                      value={
-                                        uiConfig.customQuality?.bloomKernel ||
-                                        DefaultCustomQualitySettings.bloomKernel
-                                      }
-                                      onChange={(e) =>
-                                        handleCustomQualityChange(
-                                          "bloomKernel",
-                                          parseInt(e.target.value),
-                                        )
-                                      }
-                                      variant={
-                                        isLightBackground ? "dark" : "default"
-                                      }
-                                      options={[
-                                        { value: 16, label: "16 (Tight)" },
-                                        { value: 32, label: "32 (Normal)" },
-                                        { value: 48, label: "48 (Wide)" },
-                                        { value: 64, label: "64 (Very Wide)" },
-                                      ]}
-                                    />
-                                    <span className="text-xs vassist-text-muted">
-                                      {uiConfig.customQuality?.bloomKernel ||
-                                        DefaultCustomQualitySettings.bloomKernel}
-                                    </span>
-                                  </div>
-                                </SettingsRow>
-                              </div>
-                            )}
-
-                            <SettingsRow label={<>Contrast</>} layout="stacked">
-                              <div className="flex min-w-0 items-center gap-3">
-                                <RangeSlider
-                                  aria-label="Contrast"
-                                  min="0.5"
-                                  max="2.0"
-                                  step="0.05"
-                                  value={
-                                    uiConfig.customQuality?.contrast ||
-                                    DefaultCustomQualitySettings.contrast
-                                  }
-                                  onValueChange={(nextValue) =>
+                                  onChange={(checked) =>
                                     handleCustomQualityChange(
-                                      "contrast",
-                                      nextValue,
+                                      "bloomEnabled",
+                                      checked,
                                     )
                                   }
+                                  size="sm"
+                                  isLightBackground={isLightBackground}
                                 />
-                                <span className="shrink-0 text-xs tabular-nums vassist-text-secondary">
-                                  {(
-                                    uiConfig.customQuality?.contrast ||
-                                    DefaultCustomQualitySettings.contrast
-                                  ).toFixed(2)}
-                                </span>
-                              </div>
-                            </SettingsRow>
+                              </SettingsRow>
+                              {(uiConfig.customQuality?.bloomEnabled ??
+                                DefaultCustomQualitySettings.bloomEnabled) && (
+                                <>
+                                  <SettingsRow
+                                    label={<>Bloom Threshold</>}
+                                    description={
+                                      <>Higher = only brightest areas glow</>
+                                    }
+                                    layout="stacked"
+                                  >
+                                    <div className="flex min-w-0 items-center gap-3">
+                                      <RangeSlider
+                                        aria-label="Bloom Threshold"
+                                        min="0.5"
+                                        max="1.0"
+                                        step="0.05"
+                                        value={
+                                          uiConfig.customQuality
+                                            ?.bloomThreshold ||
+                                          DefaultCustomQualitySettings.bloomThreshold
+                                        }
+                                        onValueChange={(nextValue) =>
+                                          handleCustomQualityChange(
+                                            "bloomThreshold",
+                                            nextValue,
+                                          )
+                                        }
+                                      />
+                                      <span className="shrink-0 text-xs tabular-nums vassist-text-secondary">
+                                        {(
+                                          uiConfig.customQuality
+                                            ?.bloomThreshold ||
+                                          DefaultCustomQualitySettings.bloomThreshold
+                                        ).toFixed(2)}
+                                      </span>
+                                    </div>
+                                  </SettingsRow>
 
-                            <SettingsRow label={<>Exposure</>} layout="stacked">
-                              <div className="flex min-w-0 items-center gap-3">
-                                <RangeSlider
-                                  aria-label="Exposure"
-                                  min="0.5"
-                                  max="2.0"
-                                  step="0.05"
-                                  value={
-                                    uiConfig.customQuality?.exposure ||
-                                    DefaultCustomQualitySettings.exposure
-                                  }
-                                  onValueChange={(nextValue) =>
-                                    handleCustomQualityChange(
-                                      "exposure",
-                                      nextValue,
-                                    )
-                                  }
-                                />
-                                <span className="shrink-0 text-xs tabular-nums vassist-text-secondary">
-                                  {(
-                                    uiConfig.customQuality?.exposure ||
-                                    DefaultCustomQualitySettings.exposure
-                                  ).toFixed(2)}
-                                </span>
-                              </div>
-                            </SettingsRow>
+                                  <SettingsRow
+                                    label={<>Bloom Intensity</>}
+                                    layout="stacked"
+                                  >
+                                    <div className="flex min-w-0 items-center gap-3">
+                                      <RangeSlider
+                                        aria-label="Bloom Intensity"
+                                        min="0.05"
+                                        max="0.5"
+                                        step="0.05"
+                                        value={
+                                          uiConfig.customQuality?.bloomWeight ||
+                                          DefaultCustomQualitySettings.bloomWeight
+                                        }
+                                        onValueChange={(nextValue) =>
+                                          handleCustomQualityChange(
+                                            "bloomWeight",
+                                            nextValue,
+                                          )
+                                        }
+                                      />
+                                      <span className="shrink-0 text-xs tabular-nums vassist-text-secondary">
+                                        {(
+                                          uiConfig.customQuality?.bloomWeight ||
+                                          DefaultCustomQualitySettings.bloomWeight
+                                        ).toFixed(2)}
+                                      </span>
+                                    </div>
+                                  </SettingsRow>
 
-                            <SettingsRow
-                              label={<>Saturation</>}
-                              description={
-                                <>0 = neutral, positive = more vibrant</>
-                              }
-                              layout="stacked"
-                            >
-                              <div className="flex min-w-0 items-center gap-3">
-                                <RangeSlider
-                                  aria-label="Saturation"
-                                  min="-50"
-                                  max="50"
-                                  step="5"
-                                  value={
-                                    uiConfig.customQuality?.saturation ??
-                                    DefaultCustomQualitySettings.saturation
-                                  }
-                                  onValueChange={(nextValue) =>
-                                    handleCustomQualityChange(
-                                      "saturation",
-                                      Math.trunc(nextValue),
-                                    )
-                                  }
-                                />
-                                <span className="shrink-0 text-xs tabular-nums vassist-text-secondary">
-                                  {uiConfig.customQuality?.saturation ??
-                                    DefaultCustomQualitySettings.saturation}
-                                </span>
-                              </div>
-                            </SettingsRow>
+                                  <SettingsRow
+                                    label={<>Bloom Scale</>}
+                                    layout="stacked"
+                                  >
+                                    <div className="flex min-w-0 items-center gap-3">
+                                      <RangeSlider
+                                        aria-label="Bloom Scale"
+                                        min="0.1"
+                                        max="1.0"
+                                        step="0.1"
+                                        value={
+                                          uiConfig.customQuality?.bloomScale ||
+                                          DefaultCustomQualitySettings.bloomScale
+                                        }
+                                        onValueChange={(nextValue) =>
+                                          handleCustomQualityChange(
+                                            "bloomScale",
+                                            nextValue,
+                                          )
+                                        }
+                                      />
+                                      <span className="shrink-0 text-xs tabular-nums vassist-text-secondary">
+                                        {(
+                                          uiConfig.customQuality?.bloomScale ||
+                                          DefaultCustomQualitySettings.bloomScale
+                                        ).toFixed(1)}
+                                      </span>
+                                    </div>
+                                  </SettingsRow>
+
+                                  <SettingsRow
+                                    label={<>Bloom Kernel Size</>}
+                                    layout="stacked"
+                                  >
+                                    <div className="flex min-w-0 items-center justify-between gap-3">
+                                      <Select
+                                        value={
+                                          uiConfig.customQuality?.bloomKernel ||
+                                          DefaultCustomQualitySettings.bloomKernel
+                                        }
+                                        onChange={(e) =>
+                                          handleCustomQualityChange(
+                                            "bloomKernel",
+                                            parseInt(e.target.value),
+                                          )
+                                        }
+                                        variant={
+                                          isLightBackground ? "dark" : "default"
+                                        }
+                                        options={[
+                                          { value: 16, label: "16 (Tight)" },
+                                          { value: 32, label: "32 (Normal)" },
+                                          { value: 48, label: "48 (Wide)" },
+                                          {
+                                            value: 64,
+                                            label: "64 (Very Wide)",
+                                          },
+                                        ]}
+                                      />
+                                      <span className="text-xs vassist-text-muted">
+                                        {uiConfig.customQuality?.bloomKernel ||
+                                          DefaultCustomQualitySettings.bloomKernel}
+                                      </span>
+                                    </div>
+                                  </SettingsRow>
+                                </>
+                              )}
+                            </SettingsGroup>
+
+                            <SettingsGroup>
+                              <SettingsRow
+                                label={<>Contrast</>}
+                                layout="stacked"
+                              >
+                                <div className="flex min-w-0 items-center gap-3">
+                                  <RangeSlider
+                                    aria-label="Contrast"
+                                    min="0.5"
+                                    max="2.0"
+                                    step="0.05"
+                                    value={
+                                      uiConfig.customQuality?.contrast ||
+                                      DefaultCustomQualitySettings.contrast
+                                    }
+                                    onValueChange={(nextValue) =>
+                                      handleCustomQualityChange(
+                                        "contrast",
+                                        nextValue,
+                                      )
+                                    }
+                                  />
+                                  <span className="shrink-0 text-xs tabular-nums vassist-text-secondary">
+                                    {(
+                                      uiConfig.customQuality?.contrast ||
+                                      DefaultCustomQualitySettings.contrast
+                                    ).toFixed(2)}
+                                  </span>
+                                </div>
+                              </SettingsRow>
+                              <SettingsRow
+                                label={<>Exposure</>}
+                                layout="stacked"
+                              >
+                                <div className="flex min-w-0 items-center gap-3">
+                                  <RangeSlider
+                                    aria-label="Exposure"
+                                    min="0.5"
+                                    max="2.0"
+                                    step="0.05"
+                                    value={
+                                      uiConfig.customQuality?.exposure ||
+                                      DefaultCustomQualitySettings.exposure
+                                    }
+                                    onValueChange={(nextValue) =>
+                                      handleCustomQualityChange(
+                                        "exposure",
+                                        nextValue,
+                                      )
+                                    }
+                                  />
+                                  <span className="shrink-0 text-xs tabular-nums vassist-text-secondary">
+                                    {(
+                                      uiConfig.customQuality?.exposure ||
+                                      DefaultCustomQualitySettings.exposure
+                                    ).toFixed(2)}
+                                  </span>
+                                </div>
+                              </SettingsRow>
+
+                              <SettingsRow
+                                label={<>Saturation</>}
+                                description={
+                                  <>0 = neutral, positive = more vibrant</>
+                                }
+                                layout="stacked"
+                              >
+                                <div className="flex min-w-0 items-center gap-3">
+                                  <RangeSlider
+                                    aria-label="Saturation"
+                                    min="-50"
+                                    max="50"
+                                    step="5"
+                                    value={
+                                      uiConfig.customQuality?.saturation ??
+                                      DefaultCustomQualitySettings.saturation
+                                    }
+                                    onValueChange={(nextValue) =>
+                                      handleCustomQualityChange(
+                                        "saturation",
+                                        Math.trunc(nextValue),
+                                      )
+                                    }
+                                  />
+                                  <span className="shrink-0 text-xs tabular-nums vassist-text-secondary">
+                                    {uiConfig.customQuality?.saturation ??
+                                      DefaultCustomQualitySettings.saturation}
+                                  </span>
+                                </div>
+                              </SettingsRow>
+                            </SettingsGroup>
 
                             <Button
                               variant={isLightBackground ? "dark" : "default"}
@@ -3229,6 +3243,11 @@ const ThreeDSettings = ({
                   {/* Animations Tab */}
                   {activeSubTab === "animations" && (
                     <div className="flex flex-col gap-4">
+                      <PoseLibrarySettings
+                        isLightBackground={isLightBackground}
+                        refreshTrigger={refreshTrigger}
+                      />
+
                       {/* Motion Management */}
                       <div className="flex flex-col gap-2">
                         <h4 className="settings-group-heading">

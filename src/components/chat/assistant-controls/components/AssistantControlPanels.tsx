@@ -25,6 +25,7 @@ import type {
   EmoteListItem,
   StoredModelItem,
   StoredStageItem,
+  StoredPoseItem,
 } from "../types";
 
 interface AssistantControlPanelsProps {
@@ -42,8 +43,13 @@ interface AssistantControlPanelsProps {
   emotes: EmoteListItem[];
   filteredEmotes: EmoteListItem[];
   models: StoredModelItem[];
+  poses: StoredPoseItem[];
+  poseMode: boolean;
+  poseBusy: boolean;
+  poseError: string | null;
   stages: StoredStageItem[];
   selectedModelId: string | null;
+  activePoseId: string | null;
   selectedStageId: string | null;
   selectedAutoPlayCategory: string;
   autoPlayCategoryOptions: Array<{ value: string; label: string }>;
@@ -60,6 +66,7 @@ interface AssistantControlPanelsProps {
   stickerBorderEnabled: boolean;
   actions: AssistantControlActions;
   onSeek: (progress: number) => void;
+  onTogglePoseMode: () => void;
 }
 
 function EmotePanel({
@@ -246,7 +253,12 @@ function AvatarPanel({
   isDesktop,
   isLightBackground,
   models,
+  poses,
+  poseMode,
+  poseBusy,
+  poseError,
   selectedModelId,
+  activePoseId,
   actions,
 }: Pick<
   AssistantControlPanelsProps,
@@ -256,7 +268,12 @@ function AvatarPanel({
   | "isDesktop"
   | "isLightBackground"
   | "models"
+  | "poses"
+  | "poseMode"
+  | "poseBusy"
+  | "poseError"
   | "selectedModelId"
+  | "activePoseId"
   | "actions"
 >) {
   const options = [
@@ -294,23 +311,84 @@ function AvatarPanel({
           "vassist-scroll-panel-fade",
       )}
     >
-      {options.map((option) => (
+      {poseMode && (
         <Button
-          key={option.id ?? "default"}
-          onClick={() => actions.onModelSelect(option.id)}
+          onClick={actions.onClearPose}
+          disabled={poseBusy}
           variant={panelButtonVariant(isLightBackground)}
           className={cn(
-            `${itemClassName} justify-start px-3 text-[13px]`,
-            option.selected && "ring-2 ring-white/50",
+            `${itemClassName} relative justify-center px-8 text-[13px]`,
+            !activePoseId && "ring-2 ring-white/50",
           )}
-          title={option.label}
+          aria-label="Clear applied pose"
+          aria-pressed={!activePoseId}
+          title="Clear applied pose"
         >
-          {option.selected && (
-            <Icon name="check" size={14} className="flex-shrink-0" />
+          {!activePoseId && (
+            <Icon name="check" size={14} className="absolute left-3" />
           )}
-          <span className="truncate flex-1">{option.label}</span>
+          <span className="truncate">No pose</span>
         </Button>
-      ))}
+      )}
+      {poseError && (
+        <div
+          role="alert"
+          className="mx-2 mb-1 max-w-[125px] whitespace-normal text-xs text-red-300"
+        >
+          {poseError}
+        </div>
+      )}
+      {poseMode ? (
+        poses.length ? (
+          poses.map((pose) => (
+            <Button
+              key={pose.id}
+              onClick={() => actions.onApplyPose(pose.id)}
+              disabled={poseBusy}
+              variant={panelButtonVariant(isLightBackground)}
+              className={cn(
+                `${itemClassName} relative justify-center px-8 text-[13px]`,
+                activePoseId === pose.id && "ring-2 ring-white/50",
+              )}
+              title={pose.name}
+              aria-label={`Apply pose ${pose.name}`}
+              aria-pressed={activePoseId === pose.id}
+            >
+              {activePoseId === pose.id && (
+                <Icon name="check" size={14} className="absolute left-3" />
+              )}
+              <span className="truncate">{pose.name}</span>
+            </Button>
+          ))
+        ) : (
+          <div
+            className={cn(
+              "glass-button snap-center flex h-[35px] min-h-[35px] w-[125px] items-center justify-center overflow-hidden rounded-[17.5px] px-2 mb-2 text-[12px] whitespace-nowrap backdrop-blur-[10px] text-white/50 cursor-default pointer-events-none",
+              isLightBackground && "glass-button-dark",
+            )}
+          >
+            <span className="truncate">No saved poses</span>
+          </div>
+        )
+      ) : (
+        options.map((option) => (
+          <Button
+            key={option.id ?? "default"}
+            onClick={() => actions.onModelSelect(option.id)}
+            variant={panelButtonVariant(isLightBackground)}
+            className={cn(
+              `${itemClassName} justify-start px-3 text-[13px]`,
+              option.selected && "ring-2 ring-white/50",
+            )}
+            title={option.label}
+          >
+            {option.selected && (
+              <Icon name="check" size={14} className="flex-shrink-0" />
+            )}
+            <span className="truncate flex-1">{option.label}</span>
+          </Button>
+        ))
+      )}
     </DockScrollPanel>
   );
 }
@@ -324,7 +402,9 @@ function CameraControlsPanel({
   cameraLocked,
   cameraSaveEnabled,
   stickerBorderEnabled,
+  poseMode,
   actions,
+  onTogglePoseMode,
 }: Pick<
   AssistantControlPanelsProps,
   | "transitionProps"
@@ -335,7 +415,9 @@ function CameraControlsPanel({
   | "cameraLocked"
   | "cameraSaveEnabled"
   | "stickerBorderEnabled"
+  | "poseMode"
   | "actions"
+  | "onTogglePoseMode"
 >) {
   const variant = panelButtonVariant(isLightBackground);
   const buttonClass = iconButtonClassName;
@@ -433,6 +515,16 @@ function CameraControlsPanel({
         >
           <Icon name="sticker-border" size={16} />
         </Button>
+        <Button
+          onClick={onTogglePoseMode}
+          variant={variant}
+          className={cn(buttonClass, poseMode && "ring-2 ring-white/50")}
+          title={poseMode ? "Show avatar models" : "Show saved poses"}
+          aria-label={poseMode ? "Show avatar models" : "Show saved poses"}
+          aria-pressed={poseMode}
+        >
+          <Icon name={poseMode ? "user" : "pose"} size={16} />
+        </Button>
       </div>
     </Card>
   );
@@ -454,6 +546,11 @@ export function AssistantControlPanels({
   models,
   stages,
   selectedModelId,
+  poses,
+  poseMode,
+  poseBusy,
+  poseError,
+  activePoseId,
   selectedStageId,
   selectedAutoPlayCategory,
   autoPlayCategoryOptions,
@@ -470,6 +567,7 @@ export function AssistantControlPanels({
   stickerBorderEnabled,
   actions,
   onSeek,
+  onTogglePoseMode,
 }: AssistantControlPanelsProps) {
   const xr = useXrRuntime();
   const canShowPanels =
@@ -560,7 +658,12 @@ export function AssistantControlPanels({
             isDesktop={isDesktop}
             isLightBackground={isLightBackground}
             models={models}
+            poses={poses}
+            poseMode={poseMode}
+            poseBusy={poseBusy}
+            poseError={poseError}
             selectedModelId={selectedModelId}
+            activePoseId={activePoseId}
             actions={actions}
           />
           <CameraControlsPanel
@@ -572,7 +675,9 @@ export function AssistantControlPanels({
             cameraLocked={cameraLocked}
             cameraSaveEnabled={cameraSaveEnabled}
             stickerBorderEnabled={stickerBorderEnabled}
+            poseMode={poseMode}
             actions={actions}
+            onTogglePoseMode={onTogglePoseMode}
           />
         </>
       )}

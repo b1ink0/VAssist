@@ -2613,8 +2613,7 @@ const ChatContainer = ({
     80,
     window.innerHeight -
       androidChatTop -
-      androidChatInputHeight +
-      40 -
+      (isSettingsPanelOpen ? 12 : androidChatInputHeight - 40) -
       (isHistoryPanelOpen ? 0 : androidKeyboardHeight),
   );
   const historyDialogs = (
@@ -2812,7 +2811,7 @@ const ChatContainer = ({
                 ? "none"
                 : undefined,
           transform: chatOnlyAttached ? "translateX(-50%)" : undefined,
-          zIndex: 9999,
+          zIndex: isSettingsPanelOpen ? 10010 : 9999,
           pointerEvents:
             floatingDockChatControls &&
             (messages.length === 0 || (fadeMessages && messagesFaded)) &&
@@ -3535,7 +3534,7 @@ const ChatContainer = ({
             heightPixels={760}
             offsetMeters={[0.95, 0, 0.15]}
           >
-            <div className="absolute inset-0 z-10">
+            <div className="absolute inset-0 z-20">
               <Suspense fallback={null}>
                 <SettingsPanel
                   onClose={handleSettingsPanelClose}

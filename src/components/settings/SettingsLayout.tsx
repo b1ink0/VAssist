@@ -1,6 +1,6 @@
 import { useSceneActions } from "../../hooks/app/useScene";
 import { useUIConfig } from "../../hooks/config/useConfigUI";
-import { isDesktop } from "../../utils/PlatformUtils";
+import { isAndroid, isDesktop } from "../../utils/PlatformUtils";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import SettingsScrollArea from "./shared/SettingsScrollArea";
 import { ScrollArea } from "@base-ui/react/scroll-area";
@@ -119,7 +119,7 @@ export default function SettingsLayout({
       if (viewport)
         root.style.maxHeight =
           Math.max(
-            160,
+            0,
             viewport.height +
               viewport.offsetTop -
               root.getBoundingClientRect().top,
@@ -244,6 +244,7 @@ export default function SettingsLayout({
         }
         className={cn(
           "settings-shell flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border",
+          isAndroid && "settings-android",
           isLightBackground ? "settings-dark" : "settings-light",
           animationClass,
         )}

@@ -129,13 +129,22 @@ export function ComposerModelPicker({
         triggerLabel="Model and thinking"
         triggerTestId="chat-model-picker"
         disabled={isSettingsTargetReadOnly(embedConfig, "llm.provider.select")}
-        triggerClassName="flex max-w-[9rem] items-center gap-1 rounded-lg px-2 py-2 text-xs text-current transition-colors hover:bg-current/10"
+        triggerClassName="composer-model-trigger flex max-w-[9rem] items-center gap-1 rounded-lg px-2 py-2 text-xs text-current transition-colors hover:bg-current/10"
         triggerContent={
           <>
-            <span className="truncate">
+            <Icon
+              name="cpu"
+              size={15}
+              className="composer-model-icon shrink-0"
+            />
+            <span className="composer-model-label truncate">
               {currentModel || getProviderDisplayName(provider) || "Model"}
             </span>
-            <Icon name="chevron-down" size={13} />
+            <Icon
+              name="chevron-down"
+              size={13}
+              className="composer-model-chevron shrink-0"
+            />
           </>
         }
         align="end"

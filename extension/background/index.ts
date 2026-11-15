@@ -34,9 +34,11 @@ type MessageData = Record<string, MessageValue>;
 type FileRecord = Record<string, MessageValue> & {
   data?: Blob | number[];
   motionData?: Blob | number[];
+  poseData?: Blob | number[];
   modelData?: Blob | number[];
   _blobType?: string;
   _motionBlobType?: string;
+  _poseBlobType?: string;
   _modelBlobType?: string;
 };
 
@@ -583,6 +585,16 @@ async function registerHandlers() {
           delete mutableData._motionBlobType;
         }
 
+        if (Array.isArray(rawData.poseData)) {
+          mutableData.poseData = new Blob(
+            [new Uint8Array(asNumberArray(rawData.poseData))],
+            {
+              type: asString(rawData._poseBlobType, "application/octet-stream"),
+            },
+          );
+          delete mutableData._poseBlobType;
+        }
+
         // Handle modelData (ModelStorageService)
         if (Array.isArray(rawData.modelData)) {
           Logger.log(
@@ -649,6 +661,14 @@ async function registerHandlers() {
           result._motionBlobType = blobType;
         }
 
+        if (result.poseData instanceof Blob) {
+          const blobType = result.poseData.type || "application/octet-stream";
+          result.poseData = Array.from(
+            new Uint8Array(await result.poseData.arrayBuffer()),
+          );
+          result._poseBlobType = blobType;
+        }
+
         // Handle modelData (ModelStorageService)
         if (result.modelData instanceof Blob) {
           Logger.log(
@@ -685,7 +705,18 @@ async function registerHandlers() {
   backgroundBridge.registerHandler(
     MessageTypes.STORAGE_FILES_GET_ALL,
     async () => {
-      return await storageManager.files.getAll();
+      const files = await storageManager.files.getAll();
+      for (const entry of Object.values(files)) {
+        const fileData = entry as FileRecord;
+        if (fileData?.poseData instanceof Blob) {
+          const blobType = fileData.poseData.type || "application/octet-stream";
+          fileData.poseData = Array.from(
+            new Uint8Array(await fileData.poseData.arrayBuffer()),
+          );
+          fileData._poseBlobType = blobType;
+        }
+      }
+      return files;
     },
   );
 
@@ -715,6 +746,15 @@ async function registerHandlers() {
               const buffer = await fileData.motionData.arrayBuffer();
               fileData.motionData = Array.from(new Uint8Array(buffer));
               fileData._motionBlobType = blobType;
+            }
+
+            if (fileData.poseData instanceof Blob) {
+              const blobType =
+                fileData.poseData.type || "application/octet-stream";
+              fileData.poseData = Array.from(
+                new Uint8Array(await fileData.poseData.arrayBuffer()),
+              );
+              fileData._poseBlobType = blobType;
             }
 
             // Handle modelData (ModelStorageService)

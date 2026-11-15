@@ -11,6 +11,8 @@ import {
   type AndroidTtsPack,
 } from "../../../config/androidTtsModels";
 import SettingsRow from "../../ui/SettingsRow";
+import SettingsGroup from "../shared/SettingsGroup";
+import RangeSlider from "../../ui/RangeSlider";
 
 interface PackStatus {
   downloaded?: boolean;
@@ -43,8 +45,10 @@ interface AndroidTtsPackDownloaderProps {
   onActivePackChange?: (packId: string) => void;
   /** Current speaker id in the TTS config */
   speakerId?: number;
+  speed?: number;
   /** Called when the user changes the speaker id */
   onSpeakerIdChange?: (speakerId: number) => void;
+  onSpeedChange?: (speed: number) => void;
   /** Hoist delete confirmation to the host via TypedDialog instead of inline Dialog */
   onRequestDeleteDialog?: ((packId: string) => void) | undefined;
   /** Incremented by the host after an externally-confirmed delete to reload status */
@@ -147,7 +151,9 @@ const AndroidTtsPackDownloader = ({
   activePackId,
   onActivePackChange,
   speakerId,
+  speed = 1,
   onSpeakerIdChange,
+  onSpeedChange,
   onRequestDeleteDialog,
   externalDeleteTick,
 }: AndroidTtsPackDownloaderProps) => {
@@ -377,7 +383,20 @@ const AndroidTtsPackDownloader = ({
     }
   };
 
-  if (!statusLoaded) return null;
+  const speedRow = (
+    <SettingsRow label="Speed" description={`${speed}x`} layout="stacked">
+      <RangeSlider
+        aria-label="Speed"
+        min="0.5"
+        max="2.0"
+        step="0.1"
+        value={speed}
+        onValueChange={(nextValue) => onSpeedChange?.(nextValue)}
+      />
+    </SettingsRow>
+  );
+
+  if (!statusLoaded) return <SettingsGroup>{speedRow}</SettingsGroup>;
 
   const pendingItem = buildItems().find((i) => i.id === pendingDeleteId);
 
@@ -415,7 +434,7 @@ const AndroidTtsPackDownloader = ({
       </div>
 
       {/* Active voice picker */}
-      <div className="flex min-w-0 flex-col gap-2">
+      <SettingsGroup>
         <SettingsRow label="Active Voice" layout="stacked">
           <Select
             value={normalizedActive}
@@ -432,15 +451,14 @@ const AndroidTtsPackDownloader = ({
           />
         </SettingsRow>
         {activePack?.supportsSpeakerId && (
-          <div className="flex items-center justify-between gap-2 pt-2">
-            <div>
-              <div className="text-xs vassist-text-muted">Speaker ID</div>
-              {typeof speakerMax === "number" && speakerMax > 0 && (
-                <div className="text-[10px] vassist-text-muted">
-                  0 – {speakerMaxId}
-                </div>
-              )}
-            </div>
+          <SettingsRow
+            label="Speaker ID"
+            description={
+              typeof speakerMax === "number" && speakerMax > 0
+                ? `0 – ${speakerMaxId}`
+                : undefined
+            }
+          >
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -467,9 +485,13 @@ const AndroidTtsPackDownloader = ({
                 <Icon name="plus" size={11} />
               </button>
             </div>
-          </div>
+          </SettingsRow>
         )}
-      </div>
+        {speedRow}
+      </SettingsGroup>
+      <p className="text-xs vassist-text-muted">
+        Offline voices running locally on your device (CPU via sherpa-onnx)
+      </p>
 
       {!onRequestDeleteDialog && pendingDeleteId && (
         <Dialog

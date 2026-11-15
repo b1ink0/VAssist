@@ -229,7 +229,7 @@ const STTSettings = ({
   const renderRemoteProfileBar = (
     provider: STTRemoteProviderProfile["provider"],
   ) => (
-    <div className="flex flex-col gap-2">
+    <SettingsGroup className="gap-2 p-3">
       <label className="block text-sm font-medium vassist-text-primary">
         Saved Backends
       </label>
@@ -292,7 +292,7 @@ const STTSettings = ({
           <Icon name="delete" size={14} />
         </Button>
       </div>
-    </div>
+    </SettingsGroup>
   );
   // Load available microphones (desktop mode only)
   useEffect(() => {

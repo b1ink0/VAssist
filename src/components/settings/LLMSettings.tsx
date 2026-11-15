@@ -6,6 +6,7 @@
 
 import SettingsScrollArea from "./shared/SettingsScrollArea";
 import SettingsLoading from "./shared/SettingsLoading";
+import SettingsGroup from "./shared/SettingsGroup";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import * as React from "react";
 import ThinkingControl from "../ui/ThinkingControl";
@@ -418,83 +419,82 @@ const RemoteProfileManager = ({
   };
 
   return (
-    <div className="flex flex-col gap-2">
-      <label className="block text-sm font-medium vassist-text-primary">
-        Saved Backends
-      </label>
-      <Input
-        data-testid="llm-saved-backend-name-input"
-        type="text"
-        value={profileName}
-        onChange={(event) => setProfileName(event.target.value)}
-        placeholder="Backend name"
-        variant={isLightBackground ? "dark" : "default"}
-        size="xs"
-      />
-      <div className="flex flex-1 flex-wrap items-center flex-col gap-2 [&>button:first-child]:min-w-0 [&>button:first-child]:flex-1">
-        <div className="w-full min-w-0">
-          <Select
-            data-testid="llm-saved-backend-select"
-            value={selectedProfileId}
-            onChange={(event) => handleProfileChange(event.target.value)}
-            variant={isLightBackground ? "dark" : "default"}
-            className="min-h-[32px] w-full"
-            options={[
-              {
-                value: "",
-                label:
-                  profiles.length === 0
-                    ? "No saved backends yet"
-                    : "Select a saved backend",
-              },
-              ...profiles.map((profile) => ({
-                value: profile.id,
-                label: getRemoteProfileOptionLabel(profile),
-              })),
-            ]}
-          />
-        </div>
-        <div className="flex w-full items-center gap-2">
-          <Button
-            type="button"
-            className="flex-1"
-            data-testid="llm-saved-backend-new-button"
-            size="icon"
-            variant={actionVariant}
-            onClick={startNewProfile}
-            title="Create a new saved backend"
-            aria-label="Create a new saved backend"
-          >
-            <Icon name="add" size={14} />
-          </Button>
-          <Button
-            type="button"
-            className="flex-1"
-            data-testid="llm-saved-backend-save-button"
-            size="icon"
-            variant={isLightBackground ? "dark" : "default"}
-            onClick={saveCurrentProvider}
-            title="Save current backend"
-            aria-label="Save current backend"
-          >
-            <Icon name="save" size={14} />
-          </Button>
-          <Button
-            type="button"
-            className="flex-1"
-            data-testid="llm-saved-backend-delete-button"
-            size="icon"
-            variant="error"
-            onClick={deleteProfile}
-            disabled={!selectedProfile}
-            title="Delete selected backend"
-            aria-label="Delete selected backend"
-          >
-            <Icon name="delete" size={14} />
-          </Button>
+    <SettingsRow label="Saved Backends" layout="stacked">
+      <div className="flex flex-col gap-2">
+        <Input
+          data-testid="llm-saved-backend-name-input"
+          type="text"
+          value={profileName}
+          onChange={(event) => setProfileName(event.target.value)}
+          placeholder="Backend name"
+          variant={isLightBackground ? "dark" : "default"}
+          size="xs"
+        />
+        <div className="flex flex-1 flex-wrap items-center flex-col gap-2 [&>button:first-child]:min-w-0 [&>button:first-child]:flex-1">
+          <div className="w-full min-w-0">
+            <Select
+              data-testid="llm-saved-backend-select"
+              value={selectedProfileId}
+              onChange={(event) => handleProfileChange(event.target.value)}
+              variant={isLightBackground ? "dark" : "default"}
+              className="min-h-[32px] w-full"
+              options={[
+                {
+                  value: "",
+                  label:
+                    profiles.length === 0
+                      ? "No saved backends yet"
+                      : "Select a saved backend",
+                },
+                ...profiles.map((profile) => ({
+                  value: profile.id,
+                  label: getRemoteProfileOptionLabel(profile),
+                })),
+              ]}
+            />
+          </div>
+          <div className="flex w-full items-center gap-2">
+            <Button
+              type="button"
+              className="flex-1"
+              data-testid="llm-saved-backend-new-button"
+              size="icon"
+              variant={actionVariant}
+              onClick={startNewProfile}
+              title="Create a new saved backend"
+              aria-label="Create a new saved backend"
+            >
+              <Icon name="add" size={14} />
+            </Button>
+            <Button
+              type="button"
+              className="flex-1"
+              data-testid="llm-saved-backend-save-button"
+              size="icon"
+              variant={isLightBackground ? "dark" : "default"}
+              onClick={saveCurrentProvider}
+              title="Save current backend"
+              aria-label="Save current backend"
+            >
+              <Icon name="save" size={14} />
+            </Button>
+            <Button
+              type="button"
+              className="flex-1"
+              data-testid="llm-saved-backend-delete-button"
+              size="icon"
+              variant="error"
+              onClick={deleteProfile}
+              disabled={!selectedProfile}
+              title="Delete selected backend"
+              aria-label="Delete selected backend"
+            >
+              <Icon name="delete" size={14} />
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
+    </SettingsRow>
   );
 };
 
@@ -1847,57 +1847,59 @@ const LLMSettings = ({
 
         {aiConfig.provider === AIProviders.OPENAI && (
           <>
-            <RemoteProfileManager
-              aiConfig={aiConfig}
-              updateAIConfig={updateAIConfig}
-              isLightBackground={isLightBackground}
-              provider="openai"
-            />
-            <SettingsRow
-              label="Endpoint URL"
-              targetId="llm.openai.endpoint"
-              layout="stacked"
-            >
-              <Input
-                value={aiConfig.openai.endpoint}
-                onChange={(event) =>
-                  updateAIConfig("openai.endpoint", event.target.value)
-                }
-                placeholder={DEFAULT_ENDPOINTS.openaiApi}
-                variant={isLightBackground ? "dark" : "default"}
-              />
-            </SettingsRow>
-            <SettingsRow
-              label="API Key"
-              targetId="llm.openai.apiKey"
-              layout="stacked"
-            >
-              <Input
-                type="password"
-                value={aiConfig.openai.apiKey}
-                onChange={(e) =>
-                  updateAIConfig("openai.apiKey", e.target.value)
-                }
-                placeholder="sk-..."
-                variant={isLightBackground ? "dark" : "default"}
-                className="w-full"
-              />
-            </SettingsRow>
-            <SettingsRow
-              label="Model"
-              targetId="llm.openai.model"
-              layout="stacked"
-            >
-              <RemoteModelPicker
-                value={aiConfig.openai.model}
-                onChange={(value) => updateAIConfig("openai.model", value)}
-                provider="openai"
-                endpoint={aiConfig.openai.endpoint}
-                placeholder="gpt-4o"
-                apiKey={aiConfig.openai.apiKey}
+            <SettingsGroup className="gap-0">
+              <RemoteProfileManager
+                aiConfig={aiConfig}
+                updateAIConfig={updateAIConfig}
                 isLightBackground={isLightBackground}
+                provider="openai"
               />
-            </SettingsRow>
+              <SettingsRow
+                label="Endpoint URL"
+                targetId="llm.openai.endpoint"
+                layout="stacked"
+              >
+                <Input
+                  value={aiConfig.openai.endpoint}
+                  onChange={(event) =>
+                    updateAIConfig("openai.endpoint", event.target.value)
+                  }
+                  placeholder={DEFAULT_ENDPOINTS.openaiApi}
+                  variant={isLightBackground ? "dark" : "default"}
+                />
+              </SettingsRow>
+              <SettingsRow
+                label="API Key"
+                targetId="llm.openai.apiKey"
+                layout="stacked"
+              >
+                <Input
+                  type="password"
+                  value={aiConfig.openai.apiKey}
+                  onChange={(e) =>
+                    updateAIConfig("openai.apiKey", e.target.value)
+                  }
+                  placeholder="sk-..."
+                  variant={isLightBackground ? "dark" : "default"}
+                  className="w-full"
+                />
+              </SettingsRow>
+              <SettingsRow
+                label="Model"
+                targetId="llm.openai.model"
+                layout="stacked"
+              >
+                <RemoteModelPicker
+                  value={aiConfig.openai.model}
+                  onChange={(value) => updateAIConfig("openai.model", value)}
+                  provider="openai"
+                  endpoint={aiConfig.openai.endpoint}
+                  placeholder="gpt-4o"
+                  apiKey={aiConfig.openai.apiKey}
+                  isLightBackground={isLightBackground}
+                />
+              </SettingsRow>
+            </SettingsGroup>
             <ImageSupportToggle
               providerKey="openai"
               aiConfig={aiConfig}
@@ -1913,74 +1915,79 @@ const LLMSettings = ({
 
         {aiConfig.provider === AIProviders.OLLAMA && (
           <>
-            <RemoteProfileManager
-              aiConfig={aiConfig}
-              updateAIConfig={updateAIConfig}
-              isLightBackground={isLightBackground}
-              provider="ollama"
-            />
-            <SettingsRow
-              label="API format"
-              targetId="llm.ollama.apiFormat"
-              layout="stacked"
-            >
-              <Select
-                value={aiConfig.ollama.apiFormat}
-                onChange={(event) =>
-                  updateAIConfig("ollama.apiFormat", event.target.value)
-                }
-                variant={isLightBackground ? "dark" : "default"}
-                options={[
-                  { value: "openai", label: "OpenAI-compatible" },
-                  { value: "ollama", label: "Ollama native (runtime options)" },
-                ]}
-              />
-            </SettingsRow>
-            <SettingsRow
-              label="Endpoint URL"
-              targetId="llm.ollama.endpoint"
-              layout="stacked"
-            >
-              <Input
-                type="text"
-                value={aiConfig.ollama?.endpoint ?? ""}
-                onChange={(e) =>
-                  updateAIConfig("ollama.endpoint", e.target.value)
-                }
-                placeholder={DEFAULT_ENDPOINTS.ollama}
-                variant={isLightBackground ? "dark" : "default"}
-                className="w-full"
-              />
-            </SettingsRow>
-            <SettingsRow
-              label="API Key"
-              targetId="llm.ollama.apiKey"
-              layout="stacked"
-            >
-              <Input
-                type="password"
-                value={aiConfig.ollama.apiKey}
-                onChange={(event) =>
-                  updateAIConfig("ollama.apiKey", event.target.value)
-                }
-                placeholder="Optional"
-                variant={isLightBackground ? "dark" : "default"}
-              />
-            </SettingsRow>
-            <SettingsRow
-              label="Model"
-              targetId="llm.ollama.model"
-              layout="stacked"
-            >
-              <RemoteModelPicker
-                value={aiConfig.ollama?.model ?? ""}
-                onChange={(value) => updateAIConfig("ollama.model", value)}
-                provider="ollama"
-                endpoint={aiConfig.ollama?.endpoint}
-                placeholder="llama2"
+            <SettingsGroup className="gap-0">
+              <RemoteProfileManager
+                aiConfig={aiConfig}
+                updateAIConfig={updateAIConfig}
                 isLightBackground={isLightBackground}
+                provider="ollama"
               />
-            </SettingsRow>
+              <SettingsRow
+                label="API format"
+                targetId="llm.ollama.apiFormat"
+                layout="stacked"
+              >
+                <Select
+                  value={aiConfig.ollama.apiFormat}
+                  onChange={(event) =>
+                    updateAIConfig("ollama.apiFormat", event.target.value)
+                  }
+                  variant={isLightBackground ? "dark" : "default"}
+                  options={[
+                    { value: "openai", label: "OpenAI-compatible" },
+                    {
+                      value: "ollama",
+                      label: "Ollama native (runtime options)",
+                    },
+                  ]}
+                />
+              </SettingsRow>
+              <SettingsRow
+                label="Endpoint URL"
+                targetId="llm.ollama.endpoint"
+                layout="stacked"
+              >
+                <Input
+                  type="text"
+                  value={aiConfig.ollama?.endpoint ?? ""}
+                  onChange={(e) =>
+                    updateAIConfig("ollama.endpoint", e.target.value)
+                  }
+                  placeholder={DEFAULT_ENDPOINTS.ollama}
+                  variant={isLightBackground ? "dark" : "default"}
+                  className="w-full"
+                />
+              </SettingsRow>
+              <SettingsRow
+                label="API Key"
+                targetId="llm.ollama.apiKey"
+                layout="stacked"
+              >
+                <Input
+                  type="password"
+                  value={aiConfig.ollama.apiKey}
+                  onChange={(event) =>
+                    updateAIConfig("ollama.apiKey", event.target.value)
+                  }
+                  placeholder="Optional"
+                  variant={isLightBackground ? "dark" : "default"}
+                />
+              </SettingsRow>
+              <SettingsRow
+                label="Model"
+                targetId="llm.ollama.model"
+                layout="stacked"
+              >
+                <RemoteModelPicker
+                  value={aiConfig.ollama?.model ?? ""}
+                  onChange={(value) => updateAIConfig("ollama.model", value)}
+                  provider="ollama"
+                  endpoint={aiConfig.ollama?.endpoint}
+                  placeholder="llama2"
+                  isLightBackground={isLightBackground}
+                />
+              </SettingsRow>
+            </SettingsGroup>
             <ImageSupportToggle
               providerKey="ollama"
               aiConfig={aiConfig}
@@ -2007,36 +2014,41 @@ const LLMSettings = ({
                 below.
               </p>
             </div>
-            <RemoteProfileManager
-              aiConfig={aiConfig}
-              updateAIConfig={updateAIConfig}
-              isLightBackground={isLightBackground}
-              provider="android-local"
-            />
-
-            <SettingsRow label="Endpoint URL" layout="stacked">
-              <Input
-                type="text"
-                value={
-                  aiConfig["android-local"]?.endpoint ??
-                  DEFAULT_ENDPOINTS.androidLocal
-                }
-                onChange={(e) =>
-                  updateAIConfig("android-local.endpoint", e.target.value)
-                }
-                placeholder={DEFAULT_ENDPOINTS.androidLocal}
-                variant={isLightBackground ? "dark" : "default"}
-                className="w-full"
+            <SettingsGroup className="gap-0">
+              <RemoteProfileManager
+                aiConfig={aiConfig}
+                updateAIConfig={updateAIConfig}
+                isLightBackground={isLightBackground}
+                provider="android-local"
               />
-            </SettingsRow>
+              <SettingsRow label="Endpoint URL" layout="stacked">
+                <Input
+                  type="text"
+                  value={
+                    aiConfig["android-local"]?.endpoint ??
+                    DEFAULT_ENDPOINTS.androidLocal
+                  }
+                  onChange={(e) =>
+                    updateAIConfig("android-local.endpoint", e.target.value)
+                  }
+                  placeholder={DEFAULT_ENDPOINTS.androidLocal}
+                  variant={isLightBackground ? "dark" : "default"}
+                  className="w-full"
+                />
+              </SettingsRow>
 
-            <RemoteModelPicker
-              provider="android-local"
-              value={aiConfig["android-local"].model}
-              endpoint={aiConfig["android-local"].endpoint}
-              onChange={(model) => updateAIConfig("android-local.model", model)}
-              isLightBackground={isLightBackground}
-            />
+              <SettingsRow label="Model" layout="stacked">
+                <RemoteModelPicker
+                  provider="android-local"
+                  value={aiConfig["android-local"].model}
+                  endpoint={aiConfig["android-local"].endpoint}
+                  onChange={(model) =>
+                    updateAIConfig("android-local.model", model)
+                  }
+                  isLightBackground={isLightBackground}
+                />
+              </SettingsRow>
+            </SettingsGroup>
           </>
         )}
 

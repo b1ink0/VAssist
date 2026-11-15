@@ -83,6 +83,11 @@ const blobFieldDescriptors = [
     defaultType: "application/octet-stream",
   },
   {
+    field: "poseData",
+    blobTypeField: "_poseBlobType",
+    defaultType: "application/octet-stream",
+  },
+  {
     field: "audioData",
     blobTypeField: "_audioBlobType",
     defaultType: "audio/mpeg",

@@ -13,6 +13,7 @@ import Button from "../ui/Button";
 import Toggle from "../common/Toggle";
 import Input from "../ui/Input";
 import SettingsRow from "../ui/SettingsRow";
+import SettingsGroup from "./shared/SettingsGroup";
 import BackgroundSelectionControls from "../background/BackgroundSelectionControls";
 import {
   useConfigUIActions,
@@ -256,18 +257,20 @@ const BackgroundSettings = ({
           </div>
 
           {(backgrounds.length > 0 || builtInIds.length > 0) && (
-            <SettingsRow
-              label="Background parallax"
-              description="Gently pan the background image."
-            >
-              <Toggle
-                checked={slideshow.parallaxEnabled}
-                isLightBackground={isLightBackground}
-                onChange={(checked) =>
-                  updateUIConfig("androidBackground.parallaxEnabled", checked)
-                }
-              />
-            </SettingsRow>
+            <SettingsGroup>
+              <SettingsRow
+                label="Background parallax"
+                description="Gently pan the background image."
+              >
+                <Toggle
+                  checked={slideshow.parallaxEnabled}
+                  isLightBackground={isLightBackground}
+                  onChange={(checked) =>
+                    updateUIConfig("androidBackground.parallaxEnabled", checked)
+                  }
+                />
+              </SettingsRow>
+            </SettingsGroup>
           )}
 
           {/* Clear Background Button */}
@@ -290,10 +293,10 @@ const BackgroundSettings = ({
                 <p className="text-xs font-medium vassist-text-primary">
                   Slideshow timing
                 </p>
-                <div className="flex flex-wrap gap-3">
-                  <label className="flex min-w-[120px] flex-1 flex-col gap-1 text-xs vassist-text-primary">
-                    <span>Time per image (seconds)</span>
+                <SettingsGroup>
+                  <SettingsRow label="Time per image (seconds)">
                     <Input
+                      aria-label="Time per image (seconds)"
                       type="number"
                       min={5}
                       max={3600}
@@ -311,10 +314,10 @@ const BackgroundSettings = ({
                       variant={isLightBackground ? "dark" : "default"}
                       disableDebounce
                     />
-                  </label>
-                  <label className="flex min-w-[120px] flex-1 flex-col gap-1 text-xs vassist-text-primary">
-                    <span>Fade duration (seconds)</span>
+                  </SettingsRow>
+                  <SettingsRow label="Fade duration (seconds)">
                     <Input
+                      aria-label="Fade duration (seconds)"
                       type="number"
                       min={0}
                       max={15}
@@ -332,19 +335,26 @@ const BackgroundSettings = ({
                       variant={isLightBackground ? "dark" : "default"}
                       disableDebounce
                     />
-                  </label>
-                </div>
+                  </SettingsRow>
+                </SettingsGroup>
               </div>
             )}
 
           {/* Background List */}
           {backgrounds.length > 0 && (
-            <SettingsScrollArea className="flex max-h-[200px] flex-wrap gap-2 overflow-y-auto">
+            <SettingsScrollArea
+              className="max-h-[200px] overflow-y-auto"
+              contentClassName="gap-2"
+              contentStyle={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+              }}
+            >
               {backgrounds.map((bg) => (
                 <div
                   key={bg.id}
                   className={cn(
-                    "relative group w-[calc(33.333%_-_0.375rem)] overflow-hidden rounded-lg border-2 cursor-pointer transition-all",
+                    "relative group min-w-0 overflow-hidden rounded-lg border-2 cursor-pointer transition-all",
                     bg.isActive
                       ? "border-current/50 ring-2 ring-white/20"
                       : "border-transparent hover:border-current/30",

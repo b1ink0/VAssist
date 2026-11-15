@@ -1,4 +1,8 @@
 import type { ARProvider } from "./ARProvider";
+import {
+  getNativeAndroidARBridge,
+  type NativeAndroidARBridge,
+} from "./NativeAndroidARBridge";
 import type {
   ARAnchor,
   ARFrame,
@@ -8,21 +12,9 @@ import type {
   ARTrackingState,
 } from "./ARTypes";
 
-type NativeMessagePort = {
-  addEventListener(
-    type: "message",
-    callback: (event: MessageEvent<string>) => void,
-  ): void;
-  postMessage(message: string): void;
-};
-
-type PendingRequest = {
-  resolve: (value: Record<string, unknown>) => void;
-  reject: (reason: Error) => void;
-};
-
 export class NativeAndroidARProvider implements ARProvider {
-  private port: NativeMessagePort | null = null;
+  private bridge: NativeAndroidARBridge | null = null;
+  private unsubscribe: (() => void) | null = null;
   private readonly trackingCallbacks = new Set<
     (state: ARTrackingState) => void
   >();
@@ -32,28 +24,24 @@ export class NativeAndroidARProvider implements ARProvider {
   private readonly lightCallbacks = new Set<
     (estimate: ARLightEstimate) => void
   >();
-  private readonly pendingRequests = new Map<string, PendingRequest>();
-  private messageIdCounter = 0;
   private receivedFirstFrame = false;
   private lastTrackingState: ARTrackingState["state"] | null = null;
 
   constructor() {
-    const nativePort = window.NativeARPlugin;
-    if (!nativePort) {
+    this.bridge = getNativeAndroidARBridge();
+    if (!this.bridge) {
       console.error("[VASSIST_AR] bridge:NativeARPlugin unavailable");
       return;
     }
 
-    this.port = nativePort;
     console.info("[VASSIST_AR] bridge:connected");
-    nativePort.addEventListener("message", (event) => {
-      this.handleMessage(event.data);
-    });
+    this.unsubscribe = this.bridge.subscribe((message) =>
+      this.handleMessage(message),
+    );
   }
 
-  private handleMessage(message: string): void {
+  private handleMessage(data: Record<string, unknown>): void {
     try {
-      const data = JSON.parse(message) as Record<string, unknown>;
       if (data.type === "frame") {
         const frame = data.frame as ARFrame;
         if (!this.receivedFirstFrame) {
@@ -87,15 +75,6 @@ export class NativeAndroidARProvider implements ARProvider {
         }
         return;
       }
-
-      const messageId = data.messageId;
-      if (typeof messageId === "string") {
-        const pending = this.pendingRequests.get(messageId);
-        if (pending) {
-          this.pendingRequests.delete(messageId);
-          pending.resolve(data);
-        }
-      }
     } catch (error) {
       console.error("Error parsing native AR message", error);
     }
@@ -104,25 +83,9 @@ export class NativeAndroidARProvider implements ARProvider {
   private sendWithPromise(
     payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
-    return new Promise((resolve, reject) => {
-      if (!this.port) {
-        reject(new Error("Native AR bridge is unavailable"));
-        return;
-      }
-
-      const messageId = `ar_${this.messageIdCounter++}`;
-      this.pendingRequests.set(messageId, { resolve, reject });
-      this.port.postMessage(JSON.stringify({ ...payload, messageId }));
-
-      window.setTimeout(() => {
-        const pending = this.pendingRequests.get(messageId);
-        if (!pending) return;
-        this.pendingRequests.delete(messageId);
-        pending.reject(
-          new Error(`Native AR request timed out: ${payload.action}`),
-        );
-      }, 5000);
-    });
+    if (!this.bridge)
+      return Promise.reject(new Error("Native AR bridge is unavailable"));
+    return this.bridge.request(payload);
   }
 
   public async isSupported(): Promise<boolean> {
@@ -187,10 +150,9 @@ export class NativeAndroidARProvider implements ARProvider {
     if (!anchor) throw new Error("ARCore could not create an anchor");
     return anchor;
   }
-}
 
-declare global {
-  interface Window {
-    NativeARPlugin?: NativeMessagePort;
+  public dispose(): void {
+    this.unsubscribe?.();
+    this.unsubscribe = null;
   }
 }

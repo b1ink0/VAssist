@@ -8,8 +8,27 @@ import {
 } from "../../babylon/ar/ARModeLifecycle";
 import { cn } from "../../utils/cn";
 import { Icon } from "../icons";
+import { ARCaptureControls } from "./ARCaptureControls";
 
-export function ARPlacementGuide() {
+export function ARPlacementGuide({
+  isChatOpen = false,
+  isLightBackground = false,
+}: {
+  isChatOpen?: boolean;
+  isLightBackground?: boolean;
+}) {
+  return (
+    <>
+      <ARPlacementGuideContent />
+      <ARCaptureControls
+        isChatOpen={isChatOpen}
+        isLightBackground={isLightBackground}
+      />
+    </>
+  );
+}
+
+function ARPlacementGuideContent() {
   const [state, setState] = useState<ARPlacementState>(getARPlacementState);
   const [error, setError] = useState<string | null>(getARError);
 

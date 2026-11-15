@@ -7,6 +7,7 @@ type UnknownRecord = Record<string, unknown>;
 type BackupFileCategory =
   | "model"
   | "motion"
+  | "pose"
   | "emote"
   | "stage"
   | "voice"
@@ -107,6 +108,7 @@ const detectFileCategory = (
 ): BackupFileCategory => {
   if (fileId.startsWith("model_")) return "model";
   if (fileId.startsWith("motion_")) return "motion";
+  if (fileId.startsWith("pose_")) return "pose";
   if (fileId.startsWith("emote_")) return "emote";
   if (fileId.startsWith("stage_")) return "stage";
   if (fileId.startsWith("voice_")) return "voice";
@@ -120,6 +122,7 @@ const detectFileCategory = (
 
   if (value.modelData instanceof Blob) return "model";
   if (value.motionData instanceof Blob) return "motion";
+  if (value.poseData instanceof Blob) return "pose";
   if (value.audioData instanceof Blob || value.cameraData instanceof Blob)
     return "emote";
   if (value.stageData instanceof Blob) return "stage";
@@ -138,6 +141,8 @@ const shouldIncludeFileCategory = (
     case "model":
       return selection.models;
     case "motion":
+      return selection.motions;
+    case "pose":
       return selection.motions;
     case "emote":
       return selection.emotes;

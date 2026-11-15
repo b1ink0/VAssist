@@ -5,11 +5,11 @@ VAssist repository tree and file metrics.
 ## Totals
 
 - Directories: 208
-- Files: 815
-- Text files counted for metrics: 671
-- Total text lines: 201404
-- Code files counted for metrics: 533
-- Total code lines: 175734
+- Files: 822
+- Text files counted for metrics: 678
+- Total text lines: 203647
+- Code files counted for metrics: 540
+- Total code lines: 178301
 
 ## Line Counts by File Type
 
@@ -17,27 +17,27 @@ VAssist repository tree and file metrics.
 | ------------ | ----------------------- | ----: | ----: |
 | Batch Script | .bat                    |     1 |    94 |
 | C and C++    | .c, .cc, .cpp, .h, .hpp |     7 |  2003 |
-| CSS          | .css, .scss, .less      |     8 |  3775 |
+| CSS          | .css, .scss, .less      |     8 |  3841 |
 | HTML         | .html                   |     5 |   191 |
 | Java         | .java                   |     4 |   215 |
 | JavaScript   | .js, .mjs, .cjs         |     1 |    32 |
-| Kotlin       | .kt                     |    22 | 11438 |
+| Kotlin       | .kt                     |    25 | 12597 |
 | Shell Script | (no extension)          |     5 |   654 |
-| TSX          | .tsx                    |   156 | 62137 |
-| TypeScript   | .ts, .mts, .cts         |   324 | 95195 |
-| Gradle       | .gradle                 |     7 |   579 |
+| TSX          | .tsx                    |   158 | 63029 |
+| TypeScript   | .ts, .mts, .cts         |   326 | 95645 |
+| Gradle       | .gradle                 |     7 |   580 |
 | JSON         | .json                   |    19 |   642 |
-| Markdown     | .md                     |    42 |  7667 |
+| Markdown     | .md                     |    42 |  7334 |
 | Other Text   | mixed                   |    40 | 11717 |
 | Plain Text   | (no extension)          |    12 |  4264 |
 | Properties   | .properties             |     2 |    29 |
 | SVG          | .svg                    |     4 |   342 |
-| XML          | .xml                    |    12 |   430 |
+| XML          | .xml                    |    12 |   438 |
 
 ## Top-Level Summary
 
 - .husky/: 1 directories, 1 files
-- android/: 64 directories, 94 files
+- android/: 64 directories, 97 files
 - android-src/: 1 directories, 3 files
 - documentation/: 16 directories, 67 files
 - electron/: 20 directories, 75 files
@@ -46,7 +46,7 @@ VAssist repository tree and file metrics.
 - licenses/: 1 directories, 1 files
 - packages/: 5 directories, 16 files
 - public/: 14 directories, 74 files
-- src/: 66 directories, 362 files
+- src/: 66 directories, 366 files
 - tests/: 9 directories, 57 files
 - tools/: 4 directories, 13 files
 - .gitignore: file
@@ -122,6 +122,9 @@ vassist/
 │   │   │   │   │               │   ├── VitsService.kt
 │   │   │   │   │               │   └── WhisperService.kt
 │   │   │   │   │               ├── ar/
+│   │   │   │   │               │   ├── ARCaptureAudio.kt
+│   │   │   │   │               │   ├── ARCaptureController.kt
+│   │   │   │   │               │   ├── ARCaptureService.kt
 │   │   │   │   │               │   ├── ARCoreSessionManager.kt
 │   │   │   │   │               │   ├── CameraBackgroundRenderer.kt
 │   │   │   │   │               │   └── NativeARBridge.kt
@@ -586,6 +589,7 @@ vassist/
 │   │   │   ├── ARReticle.ts
 │   │   │   ├── ARSessionController.ts
 │   │   │   ├── ARTypes.ts
+│   │   │   ├── NativeAndroidARBridge.ts
 │   │   │   └── NativeAndroidARProvider.ts
 │   │   ├── camera/
 │   │   │   ├── getAvatarScreenBounds.ts
@@ -629,6 +633,7 @@ vassist/
 │   │   ├── android/
 │   │   │   └── AndroidBackground.tsx
 │   │   ├── ar/
+│   │   │   ├── ARCaptureControls.tsx
 │   │   │   └── ARPlacementGuide.tsx
 │   │   ├── assistant/
 │   │   │   ├── BabylonScene.tsx
@@ -751,6 +756,7 @@ vassist/
 │   │   │   ├── DesktopModeSettings.tsx
 │   │   │   ├── EmotePlaybackSettings.tsx
 │   │   │   ├── LLMSettings.tsx
+│   │   │   ├── PoseLibrarySettings.tsx
 │   │   │   ├── SettingsLayout.tsx
 │   │   │   ├── SettingsSubTabContent.tsx
 │   │   │   ├── SettingsThemeContext.ts
@@ -922,6 +928,7 @@ vassist/
 │   │   │   ├── LLMModelStorageService.ts
 │   │   │   ├── ModelStorageService.ts
 │   │   │   ├── MotionStorageService.ts
+│   │   │   ├── PoseStorageService.ts
 │   │   │   ├── StageImportService.ts
 │   │   │   └── StageStorageService.ts
 │   │   └── xr/

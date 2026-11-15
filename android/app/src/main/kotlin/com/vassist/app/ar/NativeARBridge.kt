@@ -11,7 +11,8 @@ import java.util.concurrent.atomic.AtomicReference
 
 class NativeARBridge(
     private val webView: WebView,
-    private val sessionManager: ARCoreSessionManager?
+    private val sessionManager: ARCoreSessionManager?,
+    private val capture: ARCaptureController? = null
 ) {
     companion object {
         private const val TAG = "VASSIST_AR"
@@ -125,7 +126,43 @@ class NativeARBridge(
                     }
                 }
             }
+
+            "capturePhoto" -> capture?.capturePhoto(
+                data.optString("avatarPngDataUrl"),
+                data.optJSONObject("avatarRect") ?: JSONObject(),
+            ) { uri, error ->
+                postCaptureResult(response("capturePhotoResult", data).apply {
+                    put("success", error == null)
+                    if (uri != null) put("uri", uri.toString())
+                    if (error != null) put("error", error)
+                })
+            } ?: postCaptureResult(response("capturePhotoResult", data).apply {
+                put("success", false); put("error", "Native capture is unavailable")
+            })
+
+            "startVideo" -> capture?.requestVideo(data.optString("messageId"), data.optBoolean("mediaAudio", true), data.optBoolean("microphone", false))
+                ?: postCaptureResult(response("startVideoResult", data).apply {
+                    put("success", false); put("error", "Native capture is unavailable")
+                })
+
+            "stopVideo" -> capture?.stopVideo(data.optString("messageId"))
+                ?: postCaptureResult(response("stopVideoResult", data).apply {
+                    put("success", false); put("error", "Native capture is unavailable")
+                })
+
+            "shareCapture" -> capture?.shareCapture(data.optString("uri")) { error ->
+                postCaptureResult(response("shareCaptureResult", data).apply {
+                    put("success", error == null)
+                    if (error != null) put("error", error)
+                })
+            } ?: postCaptureResult(response("shareCaptureResult", data).apply {
+                put("success", false); put("error", "Native capture is unavailable")
+            })
         }
+    }
+
+    fun postCaptureResult(message: JSONObject) {
+        webView.post { replyProxy?.postMessage(message.toString()) }
     }
 
     /**

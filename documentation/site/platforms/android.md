@@ -41,6 +41,10 @@ AR places the Live Assistant in the camera view on ARCore-compatible Android dev
 
 AR mode is part of the full app. Set up the avatar and settings there before switching to live wallpaper mode.
 
+AR opens with chat and the composer minimized. Use the assistant control to reopen chat. After placing the avatar, tap the <AppIcon name="camera" /> **AR capture** button at the lower right. Choose <AppIcon name="camera" /> **Take photo** or <AppIcon name="video-camera" /> **Record video**. Photos are saved to `Pictures/VAssist`. Videos are saved to `Movies/VAssist`.
+
+Video recording asks for Android's screen-recording consent. It includes media audio by default. You can also enable the microphone before recording. Android requests microphone permission when audio capture is selected. Media audio capture requires Android 10 or later. On older versions, turn media audio off to record without it. Some apps block playback capture, so their audio may not be included. The controls hide while recording. Tap the screen or **Stop** in the recording notification to finish. After saving, tap <AppIcon name="share" /> to share the capture. To frame a shot without controls, tap <AppIcon name="eye-off" />. Tap <AppIcon name="eye" /> to show them again. Capture controls fade while chat is open and return when chat closes.
+
 ## What to know before using wallpaper mode
 
 - Wallpaper mode is more limited than the full app.

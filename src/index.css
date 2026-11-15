@@ -374,3 +374,18 @@ a,
       var(--vassist-surface-base);
   }
 }
+html[data-ar-capture-clean] body * {
+  visibility: hidden !important;
+}
+
+html[data-ar-capture-clean] #vassist-babylon-canvas {
+  visibility: visible !important;
+}
+
+html[data-ar-capture-clean="hidden"] #vassist-ar-show-controls {
+  visibility: visible !important;
+}
+
+html[data-ar-capture-clean="capture"] #vassist-ar-stop-recording {
+  visibility: visible !important;
+}

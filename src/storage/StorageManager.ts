@@ -511,7 +511,8 @@ export class StorageManager {
           if (
             !(val instanceof Blob) &&
             key !== "modelData" &&
-            key !== "motionData"
+            key !== "motionData" &&
+            key !== "poseData"
           ) {
             cleanValue[key] = val;
           }

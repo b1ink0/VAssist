@@ -35,7 +35,14 @@ const UI_KEYS = [
   "backgroundDetection",
   "thinkingPanelAutoExpand",
 ] as const;
-const FILE_CATEGORIES = ["model", "stage", "motion", "emote", "voice"] as const;
+const FILE_CATEGORIES = [
+  "model",
+  "stage",
+  "motion",
+  "pose",
+  "emote",
+  "voice",
+] as const;
 const record = (value: unknown): Record<string, unknown> => {
   if (!value || typeof value !== "object" || Array.isArray(value))
     throw new Error("Expected an XR data record.");

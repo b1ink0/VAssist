@@ -91,25 +91,26 @@ export const DisplayTab = ({
     {!uiConfig.enableModelLoading && allowPositionSelection && (
       <div className="flex flex-col gap-2">
         <h4 className="settings-group-heading">Chat Position</h4>
-        <label className="block text-sm font-medium vassist-text-primary">
-          Chat Window Position
-        </label>
-        <Select
-          value={uiConfig.position?.preset || "bottom-right"}
-          onChange={(event) =>
-            updateUIConfig("position.preset", event.target.value)
-          }
-          variant={isLightBackground ? "dark" : "default"}
-          options={[
-            {
-              value: "last-location",
-              label: "Last Location (Remember Position)",
-            },
-            ...Object.entries(PositionPresets)
-              .filter(([key]) => key !== "last-location")
-              .map(([key, preset]) => ({ value: key, label: preset.name })),
-          ]}
-        />
+        <SettingsGroup>
+          <SettingsRow label="Chat Window Position" layout="stacked">
+            <Select
+              value={uiConfig.position?.preset || "bottom-right"}
+              onChange={(event) =>
+                updateUIConfig("position.preset", event.target.value)
+              }
+              variant={isLightBackground ? "dark" : "default"}
+              options={[
+                {
+                  value: "last-location",
+                  label: "Last Location (Remember Position)",
+                },
+                ...Object.entries(PositionPresets)
+                  .filter(([key]) => key !== "last-location")
+                  .map(([key, preset]) => ({ value: key, label: preset.name })),
+              ]}
+            />
+          </SettingsRow>
+        </SettingsGroup>
       </div>
     )}
 
@@ -221,25 +222,27 @@ export interface ChatTabProps extends SharedProps {}
 
 export const ChatTab = ({ uiConfig, updateUIConfig }: ChatTabProps) => (
   <div className="flex flex-col gap-4">
-    <SettingsRow
-      label="Fade chat messages"
-      description="Show the latest message briefly. Open Chat options to show the full conversation."
-    >
-      <Toggle
-        checked={uiConfig.fadeChatMessages === true}
-        onChange={(checked) => updateUIConfig("fadeChatMessages", checked)}
-      />
-    </SettingsRow>
-    <SettingsRow
-      label="Animate response text"
-      description="Gently reveal new words as the assistant responds."
-    >
-      <Toggle
-        checked={uiConfig.animateStreamingText !== false}
-        onChange={(checked) => updateUIConfig("animateStreamingText", checked)}
-      />
-    </SettingsRow>
-    <div className="flex flex-col gap-2">
+    <SettingsGroup>
+      <SettingsRow
+        label="Fade chat messages"
+        description="Show the latest message briefly. Open Chat options to show the full conversation."
+      >
+        <Toggle
+          checked={uiConfig.fadeChatMessages === true}
+          onChange={(checked) => updateUIConfig("fadeChatMessages", checked)}
+        />
+      </SettingsRow>
+      <SettingsRow
+        label="Animate response text"
+        description="Gently reveal new words as the assistant responds."
+      >
+        <Toggle
+          checked={uiConfig.animateStreamingText !== false}
+          onChange={(checked) =>
+            updateUIConfig("animateStreamingText", checked)
+          }
+        />
+      </SettingsRow>
       <SettingsRow
         label="Smooth Response Animation"
         description={
@@ -259,20 +262,19 @@ export const ChatTab = ({ uiConfig, updateUIConfig }: ChatTabProps) => (
           }
         />
       </SettingsRow>
-    </div>
-
-    <SettingsRow
-      label="Expand thinking"
-      description="Open reasoning while a reply streams"
-    >
-      <Toggle
-        data-testid="llm-thinking-autoexpand-toggle"
-        checked={uiConfig.thinkingPanelAutoExpand === true}
-        onChange={(checked) =>
-          updateUIConfig("thinkingPanelAutoExpand", checked)
-        }
-      />
-    </SettingsRow>
+      <SettingsRow
+        label="Expand thinking"
+        description="Open reasoning while a reply streams"
+      >
+        <Toggle
+          data-testid="llm-thinking-autoexpand-toggle"
+          checked={uiConfig.thinkingPanelAutoExpand === true}
+          onChange={(checked) =>
+            updateUIConfig("thinkingPanelAutoExpand", checked)
+          }
+        />
+      </SettingsRow>
+    </SettingsGroup>
   </div>
 );
 
@@ -407,7 +409,7 @@ export const MoreTab = ({
               ["data", "Data / Presets", "Generic app data records"],
               ["chats", "Chat History", "Chats + media references"],
               ["models", "Models", "Avatar model files"],
-              ["motions", "Motions", "Animation motion files"],
+              ["motions", "Motions & Poses", "Animation motion and pose files"],
               ["emotes", "Emotes", "Audio + motion emote bundles"],
               ["stages", "Stages", "Stage model files"],
               ["voices", "Voices", "Saved reference voices"],
